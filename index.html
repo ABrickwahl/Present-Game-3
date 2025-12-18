@@ -119,7 +119,7 @@ function joinRoom() {
   roomRef = db.collection('games').doc(roomId);
 
   // Initialize room with this player if it doesn't exist
-  roomRef.set({ players: {[playerName]: {count:0}} }, { merge:true });
+  roomRef.set({ players: {[playerName]: {count:0, score:0}} }, { merge:true });
 
   document.getElementById('roomCard').style.display='none';
   document.getElementById('roomInfoCard').style.display='block';
@@ -127,7 +127,7 @@ function joinRoom() {
 
   document.getElementById('gameCard').style.display='block';
   document.getElementById('entryCard').style.display='block';
-  document.getElementById('playCard').style.display='block'; // optional: keep visible or hide until 3 entries
+  document.getElementById('playCard').style.display='none'; // hide game until entries exist
   document.getElementById('remainingCard').style.display='block';
 
   listenUpdates();
@@ -157,7 +157,7 @@ function updatePlayersList(players){
 
   for(const p in players){
     const li = document.createElement('li');
-    li.textContent = `${p} (${players[p].count || 0}/3)`;
+    li.textContent = `${p} (${players[p].count || 0}/3, score: ${players[p].score || 0})`;
     if(players[p].count>=3) li.className='done';
     list.appendChild(li);
 
@@ -176,7 +176,7 @@ async function addEntry() {
   const players = playerDoc.data().players || {};
   if((players[author].count||0) >= 3) return alert(`${author} already entered 3 items`);
 
-  const entry = { text, author, style, in_play:true };
+  const entry = { text, author, style, in_play:true, guessed_correctly:false };
   if(style==='handwriting') entry.image = canvas.toDataURL();
   else entry.font = fonts[Math.floor(Math.random()*fonts.length)];
 
@@ -210,11 +210,30 @@ async function submitGuess() {
   const guess = document.getElementById('guess').value;
   if(!currentEntry || !guess) return;
 
-  if(guess === currentEntry.author) alert('Correct!');
-  else alert('Wrong!');
+  if(guess === currentEntry.author) {
+    alert('Correct!');
 
-  // mark the entry as done
-  await roomRef.collection('entries').doc(currentEntry.id).update({ in_play:false });
+    // Increment score of the player who guessed (playerName)
+    const playerDoc = await roomRef.get();
+    const players = playerDoc.data().players || {};
+    const currentScore = players[playerName]?.score || 0;
+    await roomRef.update({ [`players.${playerName}.score`]: currentScore + 1 });
+
+    // Mark entry as guessed correctly
+    await roomRef.collection('entries').doc(currentEntry.id).update({ guessed_correctly: true, in_play:false });
+
+    // Check if all entries are guessed correctly
+    const snapshot = await roomRef.collection('entries').get();
+    const remainingCorrect = snapshot.docs.filter(doc => !doc.data().guessed_correctly);
+    if(remainingCorrect.length === 0){
+      alert('All entries have been guessed correctly! Game over.');
+      document.getElementById('playCard').style.display='none';
+    }
+
+  } else {
+    alert('Wrong!');
+  }
+
   currentEntry = null;
   document.getElementById('entry').innerHTML='';
   updateRemaining();
@@ -222,7 +241,11 @@ async function submitGuess() {
 
 async function updateRemaining(){
   const snapshot = await roomRef.collection('entries').where('in_play','==',true).get();
-  document.getElementById('remaining').innerText = snapshot.size;
+  const remaining = snapshot.size;
+  document.getElementById('remaining').innerText = remaining;
+
+  // Show game section if there are entries still in play
+  document.getElementById('playCard').style.display = remaining > 0 ? 'block' : 'none';
 }
 </script>
 

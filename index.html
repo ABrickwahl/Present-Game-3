@@ -22,7 +22,7 @@ canvas { border:1px solid #ccc; border-radius:6px; }
 
 <h1>Handwriting Guess Game - Firebase</h1>
 
-<!-- Room join -->
+<!-- Join Room -->
 <div class="card" id="roomCard">
   <h3>Create or Join Room</h3>
   <input id="playerName" placeholder="Your name" />
@@ -30,19 +30,19 @@ canvas { border:1px solid #ccc; border-radius:6px; }
   <button onclick="joinRoom()">Join Room</button>
 </div>
 
-<!-- Room info -->
+<!-- Room Code Display -->
 <div class="card" id="roomInfoCard" style="display:none;">
   <h3>Room Code: <span id="displayRoomCode"></span></h3>
   <button onclick="copyRoomCode()">Copy Room Code</button>
 </div>
 
-<!-- Player list -->
+<!-- Players List -->
 <div class="card" id="gameCard" style="display:none;">
   <h3>Players</h3>
   <ul id="players"></ul>
 </div>
 
-<!-- Entry submission -->
+<!-- Entry Submission -->
 <div class="card" id="entryCard" style="display:none;">
   <h3>Add Entry</h3>
   <select id="entryAuthor"></select><br />
@@ -56,7 +56,7 @@ canvas { border:1px solid #ccc; border-radius:6px; }
   <button id="addEntryBtn" onclick="addEntry()">Add Entry</button>
 </div>
 
-<!-- Game section -->
+<!-- Game Section -->
 <div class="card" id="playCard" style="display:none;">
   <h3>Game</h3>
   <button onclick="drawEntry()">Draw Random Entry</button>
@@ -65,7 +65,7 @@ canvas { border:1px solid #ccc; border-radius:6px; }
   <button onclick="submitGuess()">Guess</button>
 </div>
 
-<!-- Remaining entries -->
+<!-- Remaining Entries -->
 <div class="card" id="remainingCard" style="display:none;">
   Remaining entries: <span id="remaining">0</span>
 </div>
@@ -117,6 +117,8 @@ function joinRoom() {
   if(!playerName || !roomId) return alert('Enter name and room code');
 
   roomRef = db.collection('games').doc(roomId);
+
+  // Initialize room with this player if it doesn't exist
   roomRef.set({ players: {[playerName]: {count:0}} }, { merge:true });
 
   document.getElementById('roomCard').style.display='none';
@@ -125,7 +127,7 @@ function joinRoom() {
 
   document.getElementById('gameCard').style.display='block';
   document.getElementById('entryCard').style.display='block';
-  document.getElementById('playCard').style.display='none'; // hide game initially
+  document.getElementById('playCard').style.display='none'; // hide game until entries exist
   document.getElementById('remainingCard').style.display='block';
 
   listenUpdates();
@@ -145,7 +147,7 @@ function listenUpdates() {
   });
 }
 
-async function updatePlayersList(players){
+function updatePlayersList(players){
   const list = document.getElementById('players');
   list.innerHTML='';
   const authorSelect = document.getElementById('entryAuthor');
@@ -153,28 +155,15 @@ async function updatePlayersList(players){
   authorSelect.innerHTML='';
   guessSelect.innerHTML='';
 
-  let allPlayersDone = true;
-
   for(const p in players){
-    const count = players[p].count || 0;
-    if(count < 3) allPlayersDone = false;
-
     const li = document.createElement('li');
-    li.textContent = `${p} (${count}/3)`;
-    if(count >= 3) li.className='done';
+    li.textContent = `${p} (${players[p].count || 0}/3)`;
+    if(players[p].count>=3) li.className='done';
     list.appendChild(li);
 
-    const o1 = document.createElement('option'); o1.value=p;o1.textContent=p; authorSelect.appendChild(o1);
-    const o2 = document.createElement('option'); o2.value=p;o2.textContent=p; guessSelect.appendChild(o2);
+    const o1 = document.createElement('option'); o1.value=p; o1.textContent=p; authorSelect.appendChild(o1);
+    const o2 = document.createElement('option'); o2.value=p; o2.textContent=p; guessSelect.appendChild(o2);
   }
-
-  // Enable/disable add entry button for this player
-  if(players[playerName] && players[playerName].count >= 3){
-    document.getElementById('addEntryBtn').disabled = true;
-  }
-
-  // Show game only when all players have 3 entries
-  document.getElementById('playCard').style.display = allPlayersDone ? 'block' : 'none';
 }
 
 async function addEntry() {
@@ -194,11 +183,11 @@ async function addEntry() {
   const entryRef = roomRef.collection('entries').doc();
   await entryRef.set(entry);
 
+  // Increment player's count safely
   await roomRef.update({ [`players.${author}.count`]: (players[author].count||0)+1 });
 
   clearCanvas();
   document.getElementById('entryText').value='';
-  updatePlayersList(players);
   updateRemaining();
 }
 
@@ -222,8 +211,9 @@ async function submitGuess() {
   if(!currentEntry || !guess) return;
 
   if(guess === currentEntry.author) alert('Correct!');
-  else alert('Wrong! It was '+currentEntry.author);
+  else alert('Wrong!');
 
+  // mark the entry as done
   await roomRef.collection('entries').doc(currentEntry.id).update({ in_play:false });
   currentEntry = null;
   document.getElementById('entry').innerHTML='';
@@ -232,7 +222,15 @@ async function submitGuess() {
 
 async function updateRemaining(){
   const snapshot = await roomRef.collection('entries').where('in_play','==',true).get();
-  document.getElementById('remaining').innerText = snapshot.size;
+  const remaining = snapshot.size;
+  document.getElementById('remaining').innerText = remaining;
+
+  // Show/hide game section based on remaining entries
+  document.getElementById('playCard').style.display = remaining > 0 ? 'block' : 'none';
+
+  if(remaining === 0){
+    alert('All entries have been guessed! Game over.');
+  }
 }
 </script>
 

@@ -2,27 +2,42 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Xmas 2025 Yall</title>
+<title>Handwriting Guess Game - Firebase</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Indie+Flower&family=Caveat&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
 <style>
-body { font-family: Roboto, sans-serif; background:#f5f5f5; padding:20px; }
-h1 { margin-bottom:10px; }
-.card { background:white; padding:15px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); margin-bottom:15px; }
-input, select, button { padding:8px; margin:5px 0; }
-button { cursor:pointer; }
-canvas { border:1px solid #ccc; border-radius:6px; }
-.entry-card { font-size:26px; text-align:center; margin:15px 0; }
-.done { color: green; font-weight: bold; }
+body { 
+  font-family: Roboto, sans-serif; 
+  background: url('https://i.ibb.co/0Z6M95Z/xmas-background.jpg') no-repeat center center fixed; 
+  background-size: cover; 
+  color: #eee; 
+  padding:20px; 
+}
+h1 { margin-bottom:10px; color:#fff; text-shadow: 2px 2px 5px #000; }
+.card { 
+  background: rgba(30,30,30,0.85); 
+  padding:15px; 
+  border-radius:10px; 
+  box-shadow:0 4px 10px rgba(0,0,0,0.5); 
+  margin-bottom:15px; 
+  color:#fff;
+}
+input, select, button { padding:8px; margin:5px 0; border-radius:5px; border:none; }
+input, select { background:#444; color:#fff; }
+button { cursor:pointer; background:#d9534f; color:#fff; border:none; }
+button:hover { background:#c9302c; }
+canvas { border:1px solid #ccc; border-radius:6px; background:#222; }
+.entry-card { font-size:26px; text-align:center; margin:15px 0; color:#ffd700; }
+.done { color: #28a745; font-weight: bold; }
+#winnerCard { display:none; background: rgba(255,215,0,0.9); color:#000; font-size:24px; font-weight:bold; text-align:center; padding:20px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.7); }
 </style>
 </head>
 <body>
 
-<h1>Handwriting Guess Game - Firebase</h1>
+<h1>🎄 Handwriting Guess Game 🎄</h1>
 
-<!-- Join Room -->
 <div class="card" id="roomCard">
   <h3>Create or Join Room</h3>
   <input id="playerName" placeholder="Your name" />
@@ -30,19 +45,16 @@ canvas { border:1px solid #ccc; border-radius:6px; }
   <button onclick="joinRoom()">Join Room</button>
 </div>
 
-<!-- Room Code Display -->
 <div class="card" id="roomInfoCard" style="display:none;">
   <h3>Room Code: <span id="displayRoomCode"></span></h3>
   <button onclick="copyRoomCode()">Copy Room Code</button>
 </div>
 
-<!-- Players List -->
 <div class="card" id="gameCard" style="display:none;">
   <h3>Players</h3>
   <ul id="players"></ul>
 </div>
 
-<!-- Entry Submission -->
 <div class="card" id="entryCard" style="display:none;">
   <h3>Add Entry</h3>
   <select id="entryAuthor"></select><br />
@@ -56,7 +68,6 @@ canvas { border:1px solid #ccc; border-radius:6px; }
   <button id="addEntryBtn" onclick="addEntry()">Add Entry</button>
 </div>
 
-<!-- Game Section -->
 <div class="card" id="playCard" style="display:none;">
   <h3>Game</h3>
   <button onclick="drawEntry()">Draw Random Entry</button>
@@ -65,10 +76,11 @@ canvas { border:1px solid #ccc; border-radius:6px; }
   <button onclick="submitGuess()">Guess</button>
 </div>
 
-<!-- Remaining Entries -->
 <div class="card" id="remainingCard" style="display:none;">
   Remaining entries: <span id="remaining">0</span>
 </div>
+
+<div id="winnerCard"></div>
 
 <script>
 const firebaseConfig = {
@@ -118,8 +130,7 @@ function joinRoom() {
 
   roomRef = db.collection('games').doc(roomId);
 
-  // Initialize room with this player if it doesn't exist
-  roomRef.set({ players: {[playerName]: {count:0}} }, { merge:true });
+  roomRef.set({ players: {[playerName]: {count:0, score:0}} }, { merge:true });
 
   document.getElementById('roomCard').style.display='none';
   document.getElementById('roomInfoCard').style.display='block';
@@ -127,7 +138,7 @@ function joinRoom() {
 
   document.getElementById('gameCard').style.display='block';
   document.getElementById('entryCard').style.display='block';
-  document.getElementById('playCard').style.display='none'; // hide game until entries exist
+  document.getElementById('playCard').style.display='none';
   document.getElementById('remainingCard').style.display='block';
 
   listenUpdates();
@@ -157,7 +168,7 @@ function updatePlayersList(players){
 
   for(const p in players){
     const li = document.createElement('li');
-    li.textContent = `${p} (${players[p].count || 0}/3)`;
+    li.textContent = `${p} (${players[p].count || 0}/3, score: ${players[p].score || 0})`;
     if(players[p].count>=3) li.className='done';
     list.appendChild(li);
 
@@ -176,14 +187,13 @@ async function addEntry() {
   const players = playerDoc.data().players || {};
   if((players[author].count||0) >= 3) return alert(`${author} already entered 3 items`);
 
-  const entry = { text, author, style, in_play:true };
+  const entry = { text, author, style, in_play:true, guessed_correctly:false };
   if(style==='handwriting') entry.image = canvas.toDataURL();
   else entry.font = fonts[Math.floor(Math.random()*fonts.length)];
 
   const entryRef = roomRef.collection('entries').doc();
   await entryRef.set(entry);
 
-  // Increment player's count safely
   await roomRef.update({ [`players.${author}.count`]: (players[author].count||0)+1 });
 
   clearCanvas();
@@ -210,11 +220,34 @@ async function submitGuess() {
   const guess = document.getElementById('guess').value;
   if(!currentEntry || !guess) return;
 
-  if(guess === currentEntry.author) alert('Correct!');
-  else alert('Wrong!');
+  if(guess === currentEntry.author) {
+    alert('Correct!');
+    const playerDoc = await roomRef.get();
+    const players = playerDoc.data().players || {};
+    const currentScore = players[playerName]?.score || 0;
+    await roomRef.update({ [`players.${playerName}.score`]: currentScore + 1 });
 
-  // mark the entry as done
-  await roomRef.collection('entries').doc(currentEntry.id).update({ in_play:false });
+    await roomRef.collection('entries').doc(currentEntry.id).update({ guessed_correctly: true, in_play:false });
+
+    // Check winner
+    const snapshot = await roomRef.collection('entries').get();
+    const remainingCorrect = snapshot.docs.filter(doc => !doc.data().guessed_correctly);
+    if(remainingCorrect.length === 0){
+      const finalPlayers = (await roomRef.get()).data().players;
+      let maxScore = -1, winners = [];
+      for(const p in finalPlayers){
+        if(finalPlayers[p].score > maxScore){ maxScore = finalPlayers[p].score; winners = [p]; }
+        else if(finalPlayers[p].score === maxScore) winners.push(p);
+      }
+      document.getElementById('winnerCard').style.display='block';
+      document.getElementById('winnerCard').textContent = `🎉 Winner: ${winners.join(', ')} with ${maxScore} points! 🎉`;
+      document.getElementById('playCard').style.display='none';
+    }
+
+  } else {
+    alert('Wrong!');
+  }
+
   currentEntry = null;
   document.getElementById('entry').innerHTML='';
   updateRemaining();
@@ -224,16 +257,8 @@ async function updateRemaining(){
   const snapshot = await roomRef.collection('entries').where('in_play','==',true).get();
   const remaining = snapshot.size;
   document.getElementById('remaining').innerText = remaining;
-
-  // Show/hide game section based on remaining entries
   document.getElementById('playCard').style.display = remaining > 0 ? 'block' : 'none';
-
-  if(remaining === 0){
-    alert('All entries have been guessed! Game over.');
-  }
 }
 </script>
-
 </body>
 </html>
-

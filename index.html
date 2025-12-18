@@ -2,27 +2,45 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title> Xmas - Bitches </title>
+<title>Xmas Bitches</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Indie+Flower&family=Caveat&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
 <style>
-body { font-family: Roboto, sans-serif; background:#f5f5f5; padding:20px; }
-h1 { margin-bottom:10px; }
-.card { background:white; padding:15px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.1); margin-bottom:15px; }
-input, select, button { padding:8px; margin:5px 0; }
-button { cursor:pointer; }
-canvas { border:1px solid #ccc; border-radius:6px; }
-.entry-card { font-size:26px; text-align:center; margin:15px 0; }
-.done { color: green; font-weight: bold; }
+/* --- Dark Xmas Theme --- */
+body { 
+  font-family: Roboto, sans-serif; 
+  background: url('https://i.ibb.co/0Z6M95Z/xmas-background.jpg') no-repeat center center fixed; 
+  background-size: cover; 
+  color: #eee; 
+  padding:20px; 
+  margin:0;
+}
+h1 { margin-bottom:10px; color:#fff; text-shadow: 2px 2px 5px #000; text-align:center; }
+.card { 
+  background: rgba(30,30,30,0.85); 
+  padding:15px; 
+  border-radius:10px; 
+  box-shadow:0 4px 10px rgba(0,0,0,0.5); 
+  margin-bottom:15px; 
+  color:#fff;
+}
+input, select, button { padding:8px; margin:5px 0; border-radius:5px; border:none; font-size:16px; }
+input, select { background:#444; color:#fff; width:100%; box-sizing:border-box; }
+button { cursor:pointer; background:#d9534f; color:#fff; border:none; width:100%; }
+button:hover { background:#c9302c; }
+canvas { border:1px solid #ccc; border-radius:6px; background:#222; touch-action:none; width:100%; height:auto; }
+.entry-card { font-size:26px; text-align:center; margin:15px 0; color:#ffd700; }
+.done { color: #28a745; font-weight: bold; }
+#winnerCard { display:none; background: rgba(255,215,0,0.9); color:#000; font-size:24px; font-weight:bold; text-align:center; padding:20px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.7); }
 </style>
 </head>
 <body>
 
-<h1>Xmas Bitches - 2025 </h1>
+<h1>🎄 2025 Presents to Present 🎄</h1>
 
-<!-- Join Room -->
+<!-- Room Join -->
 <div class="card" id="roomCard">
   <h3>Create or Join Room</h3>
   <input id="playerName" placeholder="Your name" />
@@ -30,7 +48,7 @@ canvas { border:1px solid #ccc; border-radius:6px; }
   <button onclick="joinRoom()">Join Room</button>
 </div>
 
-<!-- Room Code Display -->
+<!-- Room Info -->
 <div class="card" id="roomInfoCard" style="display:none;">
   <h3>Room Code: <span id="displayRoomCode"></span></h3>
   <button onclick="copyRoomCode()">Copy Room Code</button>
@@ -42,7 +60,7 @@ canvas { border:1px solid #ccc; border-radius:6px; }
   <ul id="players"></ul>
 </div>
 
-<!-- Entry Submission -->
+<!-- Add Entry -->
 <div class="card" id="entryCard" style="display:none;">
   <h3>Add Entry</h3>
   <select id="entryAuthor"></select><br />
@@ -56,7 +74,7 @@ canvas { border:1px solid #ccc; border-radius:6px; }
   <button id="addEntryBtn" onclick="addEntry()">Add Entry</button>
 </div>
 
-<!-- Game Section -->
+<!-- Game Play -->
 <div class="card" id="playCard" style="display:none;">
   <h3>Game</h3>
   <button onclick="drawEntry()">Draw Random Entry</button>
@@ -70,7 +88,11 @@ canvas { border:1px solid #ccc; border-radius:6px; }
   Remaining entries: <span id="remaining">0</span>
 </div>
 
+<!-- Winner Display -->
+<div id="winnerCard"></div>
+
 <script>
+// --- Firebase config ---
 const firebaseConfig = {
   apiKey: "AIzaSyBcfYtibV2vzCG_rchAX8KqUnfJNbnpyQM",
   authDomain: "xmas-guessing-game-e744e.firebaseapp.com",
@@ -80,7 +102,6 @@ const firebaseConfig = {
   appId: "1:324648115760:web:c51e7284128906138ad7f5",
   measurementId: "G-XL91BHP4P4"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
@@ -94,31 +115,44 @@ const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 let drawing = false;
 
+// --- Desktop drawing ---
 canvas.addEventListener('mousedown', () => drawing = true);
 canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
 canvas.addEventListener('mousemove', draw);
 
+// --- Mobile drawing ---
+canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; drawTouch(e); });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); drawTouch(e); });
+canvas.addEventListener('touchend', e => { e.preventDefault(); drawing = false; ctx.beginPath(); });
+
 function draw(e) {
-  if (!drawing) return;
+  if(!drawing) return;
   const rect = canvas.getBoundingClientRect();
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
+  ctx.lineWidth = 2; ctx.lineCap = 'round';
   ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
   ctx.stroke();
   ctx.beginPath();
   ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
 }
-
+function drawTouch(e) {
+  if(!drawing) return;
+  const touch = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  ctx.lineWidth = 2; ctx.lineCap = 'round';
+  ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
+}
 function clearCanvas() { ctx.clearRect(0,0,canvas.width,canvas.height); }
 
+// --- Join Room ---
 function joinRoom() {
   playerName = document.getElementById('playerName').value.trim();
   roomId = document.getElementById('roomId').value.trim();
   if(!playerName || !roomId) return alert('Enter name and room code');
 
   roomRef = db.collection('games').doc(roomId);
-
-  // Initialize room with this player if it doesn't exist
   roomRef.set({ players: {[playerName]: {count:0, score:0}} }, { merge:true });
 
   document.getElementById('roomCard').style.display='none';
@@ -127,18 +161,18 @@ function joinRoom() {
 
   document.getElementById('gameCard').style.display='block';
   document.getElementById('entryCard').style.display='block';
-  document.getElementById('playCard').style.display='none'; // hide game until entries exist
+  document.getElementById('playCard').style.display='none';
   document.getElementById('remainingCard').style.display='block';
 
   listenUpdates();
 }
 
+// Copy room code
 function copyRoomCode() {
-  navigator.clipboard.writeText(roomId)
-    .then(() => alert('Room code copied!'))
-    .catch(() => alert('Failed to copy room code.'));
+  navigator.clipboard.writeText(roomId).then(() => alert('Room code copied!')).catch(()=>alert('Failed to copy.'));
 }
 
+// --- Firebase Listeners ---
 function listenUpdates() {
   roomRef.onSnapshot(snapshot => {
     const data = snapshot.data();
@@ -147,13 +181,13 @@ function listenUpdates() {
   });
 }
 
+// --- Update Players ---
 function updatePlayersList(players){
   const list = document.getElementById('players');
   list.innerHTML='';
   const authorSelect = document.getElementById('entryAuthor');
   const guessSelect = document.getElementById('guess');
-  authorSelect.innerHTML='';
-  guessSelect.innerHTML='';
+  authorSelect.innerHTML=''; guessSelect.innerHTML='';
 
   for(const p in players){
     const li = document.createElement('li');
@@ -166,6 +200,7 @@ function updatePlayersList(players){
   }
 }
 
+// --- Add Entry ---
 async function addEntry() {
   const text = document.getElementById('entryText').value.trim();
   const author = document.getElementById('entryAuthor').value;
@@ -174,7 +209,7 @@ async function addEntry() {
 
   const playerDoc = await roomRef.get();
   const players = playerDoc.data().players || {};
-  if((players[author].count||0) >= 3) return alert(`${author} already entered 3 items`);
+  if((players[author].count||0)>=3) return alert(`${author} already entered 3 items`);
 
   const entry = { text, author, style, in_play:true, guessed_correctly:false };
   if(style==='handwriting') entry.image = canvas.toDataURL();
@@ -182,19 +217,17 @@ async function addEntry() {
 
   const entryRef = roomRef.collection('entries').doc();
   await entryRef.set(entry);
-
-  // Increment player's count safely
   await roomRef.update({ [`players.${author}.count`]: (players[author].count||0)+1 });
 
-  clearCanvas();
-  document.getElementById('entryText').value='';
+  clearCanvas(); document.getElementById('entryText').value='';
   updateRemaining();
 }
 
+// --- Draw Entry ---
 async function drawEntry() {
   const snapshot = await roomRef.collection('entries').where('in_play','==',true).get();
   const entries = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-  if(entries.length === 0) return alert('No entries left');
+  if(entries.length===0) return alert('No entries left');
 
   currentEntry = entries[Math.floor(Math.random()*entries.length)];
   const div = document.getElementById('entry'); div.innerHTML='';
@@ -206,49 +239,48 @@ async function drawEntry() {
   }
 }
 
+// --- Submit Guess ---
 async function submitGuess() {
   const guess = document.getElementById('guess').value;
   if(!currentEntry || !guess) return;
 
-  if(guess === currentEntry.author) {
+  if(guess===currentEntry.author) {
     alert('Correct!');
-
-    // Increment score of the player who guessed (playerName)
     const playerDoc = await roomRef.get();
     const players = playerDoc.data().players || {};
     const currentScore = players[playerName]?.score || 0;
     await roomRef.update({ [`players.${playerName}.score`]: currentScore + 1 });
+    await roomRef.collection('entries').doc(currentEntry.id).update({ guessed_correctly:true, in_play:false });
 
-    // Mark entry as guessed correctly
-    await roomRef.collection('entries').doc(currentEntry.id).update({ guessed_correctly: true, in_play:false });
-
-    // Check if all entries are guessed correctly
-    const snapshot = await roomRef.collection('entries').get();
-    const remainingCorrect = snapshot.docs.filter(doc => !doc.data().guessed_correctly);
-    if(remainingCorrect.length === 0){
-      alert('All entries have been guessed correctly! Game over.');
+    // Check winner
+    const allEntries = await roomRef.collection('entries').get();
+    const remaining = allEntries.docs.filter(doc=>!doc.data().guessed_correctly);
+    if(remaining.length===0){
+      const finalPlayers = (await roomRef.get()).data().players;
+      let maxScore=-1, winners=[];
+      for(const p in finalPlayers){
+        if(finalPlayers[p].score>maxScore){ maxScore=finalPlayers[p].score; winners=[p]; }
+        else if(finalPlayers[p].score===maxScore) winners.push(p);
+      }
+      document.getElementById('winnerCard').style.display='block';
+      document.getElementById('winnerCard').textContent = `🎉 Winner: ${winners.join(', ')} with ${maxScore} points! 🎉`;
       document.getElementById('playCard').style.display='none';
     }
 
-  } else {
-    alert('Wrong!');
-  }
+  } else alert('Wrong!');
 
   currentEntry = null;
   document.getElementById('entry').innerHTML='';
   updateRemaining();
 }
 
+// --- Update Remaining ---
 async function updateRemaining(){
   const snapshot = await roomRef.collection('entries').where('in_play','==',true).get();
   const remaining = snapshot.size;
   document.getElementById('remaining').innerText = remaining;
-
-  // Show game section if there are entries still in play
-  document.getElementById('playCard').style.display = remaining > 0 ? 'block' : 'none';
+  document.getElementById('playCard').style.display = remaining>0 ? 'block' : 'none';
 }
 </script>
-
 </body>
 </html>
-

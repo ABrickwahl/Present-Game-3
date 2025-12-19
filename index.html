@@ -147,7 +147,9 @@ function drawTouch(e) {
   ctx.beginPath();
   ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
 }
-function clearCanvas() { ctx.clearRect(0,0,canvas.width,canvas.height); }
+function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); 
+  ctx.fillStyle = "white";  // reset background to white
+  ctx.fillRect(0, 0, canvas.width, canvas.height); }
 
 // --- Join Room ---
 function joinRoom() {
@@ -287,4 +289,5 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+
 

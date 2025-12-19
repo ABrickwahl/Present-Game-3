@@ -42,20 +42,25 @@ canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action
 
 /* Feedback box */
 #feedbackBox {
-  display:none; 
-  text-align:center; 
-  font-size:20px; 
-  font-weight:bold; 
-  padding:10px; 
-  border-radius:8px; 
-  margin:10px 0;
-  opacity:0;
-  transform: translateY(-20px);
+ position: fixed;        /* fixed on screen */
+  top: 20px;              /* distance from top */
+  left: 50%;              /* center horizontally */
+  transform: translateX(-50%) translateY(-20px);
+  z-index: 9999;          /* above all content */
+  display: none;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  padding: 10px 20px;
+  border-radius: 8px;
+  background-color: #28a745; /* default green, can change in JS */
+  color: #fff;
+  opacity: 0;
   transition: all 0.4s ease;
 }
 #feedbackBox.show {
-  opacity:1;
-  transform: translateY(0);
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 </style>
 </head>
@@ -344,3 +349,4 @@ function showFeedback(message,color){
 </script>
 </body>
 </html>
+

@@ -2,266 +2,262 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title> Xmas Bitches </title>
+<title>Xmas Bitches</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
 <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Indie+Flower&family=Caveat&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
+
 <style>
-body { background: url('https://wallpaperaccess.com/full/394418.jpg') no-repeat center center fixed; background-size:cover; }
-h1 { margin-bottom:10px; color:#fff; text-shadow: 2px 2px 5px #000; }
-.card { 
-  background: rgba(30,30,30,0.85); 
-  padding:15px; 
-  border-radius:10px; 
-  box-shadow:0 4px 10px rgba(0,0,0,0.5); 
-  margin-bottom:15px; 
+body {
+  background: url("./assets/images/xmas-tree.jpg") center/cover no-repeat fixed;
   color:#fff;
+  font-family:Roboto;
 }
-input, select, button { padding:8px; margin:5px 0; border-radius:5px; border:none; }
-input, select { background:#444; color:#fff; }
-button { cursor:pointer; background:#d9534f; color:#fff; border:none; }
-button:hover { background:#c9302c; }
-canvas { border:1px solid #ccc; 
-  border-radius:6px; 
-  background:#fff; /* changed from #222 to white */
-  touch-action:none; 
-  width:100%; 
-  height:auto; }
-.entry-card { font-size:26px; text-align:center; margin:15px 0; color:#ffd700; }
-.done { color: #28a745; font-weight: bold; }
-#winnerCard { display:none; background: rgba(255,215,0,0.9); color:#000; font-size:24px; font-weight:bold; text-align:center; padding:20px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.7); }
+.card {
+  background: rgba(30,30,30,0.85);
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:15px;
+}
+button {
+  background:#d9534f;
+  color:#fff;
+  border:none;
+  padding:8px;
+  border-radius:5px;
+  cursor:pointer;
+}
+button:disabled {
+  background:#555;
+  cursor:not-allowed;
+}
+canvas {
+  background:#fff;
+  border-radius:6px;
+  width:100%;
+}
+.entry-card {
+  font-size:26px;
+  text-align:center;
+  color:#ffd700;
+}
+#winnerCard {
+  display:none;
+  background:gold;
+  color:#000;
+  font-size:24px;
+  text-align:center;
+  padding:20px;
+  border-radius:10px;
+}
 </style>
 </head>
+
 <body>
 
 <h1>🎄 2025 Presents to Present 🎄</h1>
 
 <div class="card" id="roomCard">
-  <h3>Create or Join Room</h3>
-  <input id="playerName" placeholder="Your name" />
-  <input id="roomId" placeholder="Room code" />
+  <input id="playerName" placeholder="Your name">
+  <input id="roomId" placeholder="Room code">
   <button onclick="joinRoom()">Join Room</button>
 </div>
 
-<div class="card" id="roomInfoCard" style="display:none;">
-  <h3>Room Code: <span id="displayRoomCode"></span></h3>
-  <button onclick="copyRoomCode()">Copy Room Code</button>
+<div class="card" id="roomInfo" style="display:none;">
+  Room: <span id="roomCode"></span>
 </div>
 
-<div class="card" id="gameCard" style="display:none;">
-  <h3>Players</h3>
+<div class="card" id="playersCard" style="display:none;">
   <ul id="players"></ul>
 </div>
 
 <div class="card" id="entryCard" style="display:none;">
-  <h3>Add Entry</h3>
-  <select id="entryAuthor"></select><br />
-  <input id="entryText" placeholder="Enter text" />
+  <input id="entryText" placeholder="Entry">
   <select id="style">
-    <option value="font">Random Font</option>
+    <option value="font">Font</option>
     <option value="handwriting">Handwriting</option>
-  </select><br />
-  <canvas id="canvas" width="300" height="150"></canvas><br />
-  <button onclick="clearCanvas()">Clear Drawing</button>
-  <button id="addEntryBtn" onclick="addEntry()">Add Entry</button>
+  </select>
+  <canvas id="canvas" width="300" height="150"></canvas>
+  <button onclick="clearCanvas()">Clear</button>
+  <button onclick="addEntry()">Add Entry</button>
 </div>
 
 <div class="card" id="playCard" style="display:none;">
-  <h3>Game</h3>
-  <button onclick="drawEntry()">Draw Random Entry</button>
+  <div id="turnIndicator"></div>
+  <button onclick="drawEntry()">Draw Entry</button>
   <div id="entry"></div>
   <select id="guess"></select>
-  <button onclick="submitGuess()">Guess</button>
-</div>
-
-<div class="card" id="remainingCard" style="display:none;">
-  Remaining entries: <span id="remaining">0</span>
+  <button id="guessBtn" onclick="submitGuess()">Guess</button>
 </div>
 
 <div id="winnerCard"></div>
 
 <script>
-const firebaseConfig = {
+/* 🔥 FIREBASE */
+firebase.initializeApp({
   apiKey: "AIzaSyBcfYtibV2vzCG_rchAX8KqUnfJNbnpyQM",
   authDomain: "xmas-guessing-game-e744e.firebaseapp.com",
-  projectId: "xmas-guessing-game-e744e",
-  storageBucket: "xmas-guessing-game-e744e.firebasestorage.app",
-  messagingSenderId: "324648115760",
-  appId: "1:324648115760:web:c51e7284128906138ad7f5",
-  measurementId: "G-XL91BHP4P4"
-};
-
-firebase.initializeApp(firebaseConfig);
+  projectId: "xmas-guessing-game-e744e"
+});
 const db = firebase.firestore();
 
-let roomRef;
-let playerName = '';
-let roomId = '';
-const fonts = ['Pacifico','Indie Flower','Caveat','Lobster','Roboto'];
+/* 🎮 STATE */
+let roomRef, roomId, playerName;
 let currentEntry = null;
+const fonts = ['Pacifico','Indie Flower','Caveat','Lobster','Roboto'];
 
+/* ✏️ CANVAS */
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-let drawing = false;
-
-canvas.addEventListener('mousedown', () => drawing = true);
-canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
-canvas.addEventListener('mousemove', draw);
-
-function draw(e) {
-  if (!drawing) return;
-  const rect = canvas.getBoundingClientRect();
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+let drawing=false;
+canvas.onmousedown=()=>drawing=true;
+canvas.onmouseup=()=>{drawing=false;ctx.beginPath();}
+canvas.onmousemove=e=>{
+  if(!drawing)return;
+  const r=canvas.getBoundingClientRect();
+  ctx.lineWidth=2;
+  ctx.lineTo(e.clientX-r.left,e.clientY-r.top);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+  ctx.moveTo(e.clientX-r.left,e.clientY-r.top);
+};
+function clearCanvas(){ctx.clearRect(0,0,300,150);}
+
+/* 🚪 JOIN */
+async function joinRoom(){
+  playerName=playerNameInput.value.trim();
+  roomId=roomIdInput.value.trim();
+  if(!playerName||!roomId) return alert("Missing fields");
+
+  roomRef=db.collection("games").doc(roomId);
+
+  await roomRef.set({
+    players:{
+      [playerName]:{score:0,lastSeen:Date.now(),active:true}
+    },
+    turnOrder: firebase.firestore.FieldValue.arrayUnion(playerName),
+    turnIndex:0,
+    currentTurn:playerName
+  },{merge:true});
+
+  roomCard.style.display="none";
+  roomInfo.style.display="block";
+  playersCard.style.display="block";
+  entryCard.style.display="block";
+  playCard.style.display="block";
+  roomCode.textContent=roomId;
+
+  heartbeat();
+  listen();
 }
 
-function clearCanvas() { ctx.clearRect(0,0,canvas.width,canvas.height); }
-
-function joinRoom() {
-  playerName = document.getElementById('playerName').value.trim();
-  roomId = document.getElementById('roomId').value.trim();
-  if(!playerName || !roomId) return alert('Enter name and room code');
-
-  roomRef = db.collection('games').doc(roomId);
-
-  roomRef.set({ players: {[playerName]: {count:0, score:0}} }, { merge:true });
-
-  document.getElementById('roomCard').style.display='none';
-  document.getElementById('roomInfoCard').style.display='block';
-  document.getElementById('displayRoomCode').textContent = roomId;
-
-  document.getElementById('gameCard').style.display='block';
-  document.getElementById('entryCard').style.display='block';
-  document.getElementById('playCard').style.display='none';
-  document.getElementById('remainingCard').style.display='block';
-
-  listenUpdates();
+/* ❤️ HEARTBEAT */
+function heartbeat(){
+  setInterval(()=>{
+    roomRef.update({
+      [`players.${playerName}.lastSeen`]:Date.now(),
+      [`players.${playerName}.active`]:true
+    });
+  },5000);
 }
 
-function copyRoomCode() {
-  navigator.clipboard.writeText(roomId)
-    .then(() => alert('Room code copied!'))
-    .catch(() => alert('Failed to copy room code.'));
-}
-
-function listenUpdates() {
-  roomRef.onSnapshot(snapshot => {
-    const data = snapshot.data();
-    updatePlayersList(data.players || {});
-    updateRemaining();
+/* 👂 LISTEN */
+function listen(){
+  roomRef.onSnapshot(s=>{
+    const d=s.data();
+    updatePlayers(d.players);
+    updateTurn(d);
   });
 }
 
-function updatePlayersList(players){
-  const list = document.getElementById('players');
-  list.innerHTML='';
-  const authorSelect = document.getElementById('entryAuthor');
-  const guessSelect = document.getElementById('guess');
-  authorSelect.innerHTML='';
-  guessSelect.innerHTML='';
+/* 👥 PLAYERS */
+function updatePlayers(players){
+  playersList.innerHTML="";
+  guess.innerHTML="";
+  const now=Date.now();
 
   for(const p in players){
-    const li = document.createElement('li');
-    li.textContent = `${p} (${players[p].count || 0}/3, score: ${players[p].score || 0})`;
-    if(players[p].count>=3) li.className='done';
-    list.appendChild(li);
-
-    const o1 = document.createElement('option'); o1.value=p; o1.textContent=p; authorSelect.appendChild(o1);
-    const o2 = document.createElement('option'); o2.value=p; o2.textContent=p; guessSelect.appendChild(o2);
-  }
-}
-
-async function addEntry() {
-  const text = document.getElementById('entryText').value.trim();
-  const author = document.getElementById('entryAuthor').value;
-  const style = document.getElementById('style').value;
-  if(!text || !author) return;
-
-  const playerDoc = await roomRef.get();
-  const players = playerDoc.data().players || {};
-  if((players[author].count||0) >= 3) return alert(`${author} already entered 3 items`);
-
-  const entry = { text, author, style, in_play:true, guessed_correctly:false };
-  if(style==='handwriting') entry.image = canvas.toDataURL();
-  else entry.font = fonts[Math.floor(Math.random()*fonts.length)];
-
-  const entryRef = roomRef.collection('entries').doc();
-  await entryRef.set(entry);
-
-  await roomRef.update({ [`players.${author}.count`]: (players[author].count||0)+1 });
-
-  clearCanvas();
-  document.getElementById('entryText').value='';
-  updateRemaining();
-}
-
-async function drawEntry() {
-  const snapshot = await roomRef.collection('entries').where('in_play','==',true).get();
-  const entries = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-  if(entries.length === 0) return alert('No entries left');
-
-  currentEntry = entries[Math.floor(Math.random()*entries.length)];
-  const div = document.getElementById('entry'); div.innerHTML='';
-
-  if(currentEntry.style==='handwriting'){
-    const img = document.createElement('img'); img.src = currentEntry.image; img.width=300; div.appendChild(img);
-  } else {
-    const p = document.createElement('div'); p.className='entry-card'; p.style.fontFamily=currentEntry.font; p.textContent=currentEntry.text; div.appendChild(p);
-  }
-}
-
-async function submitGuess() {
-  const guess = document.getElementById('guess').value;
-  if(!currentEntry || !guess) return;
-
-  if(guess === currentEntry.author) {
-    alert('Correct!');
-    const playerDoc = await roomRef.get();
-    const players = playerDoc.data().players || {};
-    const currentScore = players[playerName]?.score || 0;
-    await roomRef.update({ [`players.${playerName}.score`]: currentScore + 1 });
-
-    await roomRef.collection('entries').doc(currentEntry.id).update({ guessed_correctly: true, in_play:false });
-
-    // Check winner
-    const snapshot = await roomRef.collection('entries').get();
-    const remainingCorrect = snapshot.docs.filter(doc => !doc.data().guessed_correctly);
-    if(remainingCorrect.length === 0){
-      const finalPlayers = (await roomRef.get()).data().players;
-      let maxScore = -1, winners = [];
-      for(const p in finalPlayers){
-        if(finalPlayers[p].score > maxScore){ maxScore = finalPlayers[p].score; winners = [p]; }
-        else if(finalPlayers[p].score === maxScore) winners.push(p);
-      }
-      document.getElementById('winnerCard').style.display='block';
-      document.getElementById('winnerCard').textContent = `🎉 Winner: ${winners.join(', ')} with ${maxScore} points! 🎉`;
-      document.getElementById('playCard').style.display='none';
+    const active=(now-players[p].lastSeen)<15000;
+    players[p].active=active;
+    playersList.innerHTML+=`<li>${p} ${active?"":"(offline)"}</li>`;
+    if(active){
+      const o=document.createElement("option");
+      o.value=p;o.textContent=p;
+      guess.appendChild(o);
     }
-
-  } else {
-    alert('Wrong!');
   }
-
-  currentEntry = null;
-  document.getElementById('entry').innerHTML='';
-  updateRemaining();
 }
 
-async function updateRemaining(){
-  const snapshot = await roomRef.collection('entries').where('in_play','==',true).get();
-  const remaining = snapshot.size;
-  document.getElementById('remaining').innerText = remaining;
-  document.getElementById('playCard').style.display = remaining > 0 ? 'block' : 'none';
+/* 🎯 TURN */
+function updateTurn(data){
+  turnIndicator.textContent=`Turn: ${data.currentTurn}`;
+  guessBtn.disabled=data.currentTurn!==playerName;
+}
+
+/* ➕ ENTRY */
+async function addEntry(){
+  const text=entryText.value.trim();
+  if(!text)return;
+
+  const entry={
+    text,
+    style:style.value,
+    author:playerName,
+    in_play:true
+  };
+  if(style.value==="handwriting") entry.image=canvas.toDataURL();
+  else entry.font=fonts[Math.floor(Math.random()*fonts.length)];
+
+  await roomRef.collection("entries").add(entry);
+  entryText.value="";
+  clearCanvas();
+}
+
+/* 🎲 DRAW */
+async function drawEntry(){
+  const snap=await roomRef.collection("entries").where("in_play","==",true).get();
+  if(snap.empty)return alert("No entries");
+
+  currentEntry={id:snap.docs[0].id,...snap.docs[0].data()};
+  entry.innerHTML="";
+
+  if(currentEntry.style==="handwriting"){
+    const img=new Image();img.src=currentEntry.image;img.width=300;
+    entry.appendChild(img);
+  } else {
+    const d=document.createElement("div");
+    d.className="entry-card";
+    d.style.fontFamily=currentEntry.font;
+    d.textContent=currentEntry.text;
+    entry.appendChild(d);
+  }
+}
+
+/* ✅ GUESS */
+async function submitGuess(){
+  if(!currentEntry)return;
+
+  const roomSnap=await roomRef.get();
+  const data=roomSnap.data();
+  const players=data.players;
+  const order=data.turnOrder;
+
+  let next=data.turnIndex;
+  do{
+    next=(next+1)%order.length;
+  } while(!players[order[next]].active && next!==data.turnIndex);
+
+  await roomRef.update({
+    turnIndex:next,
+    currentTurn:order[next]
+  });
+
+  currentEntry=null;
+  entry.innerHTML="";
 }
 </script>
 </body>
 </html>
-
-
-
-

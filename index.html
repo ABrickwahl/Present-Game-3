@@ -113,6 +113,9 @@ let currentEntry = null;
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
+// Make canvas background white
+ctx.fillStyle = "white";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
 let drawing = false;
 
 // --- Desktop drawing ---
@@ -284,3 +287,4 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+

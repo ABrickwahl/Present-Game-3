@@ -98,11 +98,7 @@ canvas{
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.7);
 }
-<button onclick="resetRoom()" style="margin-top:10px; background:#6c757d;">
-  Reset Room
-</button>
 
-  
 /* Feedback box */
 #feedbackBox {
   position: fixed;
@@ -151,16 +147,8 @@ canvas{
 <!-- Room Info -->
 <div class="card" id="roomInfoCard" style="display:none;">
   <h3>Room Code: <span id="displayRoomCode"></span></h3>
-
   <button onclick="copyRoomCode()">Copy Room Code</button>
-
-  <!-- ✅ Reset Room Button -->
-  <button onclick="resetRoom()"
-          style="margin-top:10px; background:#6c757d;">
-    Reset Room
-  </button>
 </div>
-
 
 <!-- Players List -->
 <div class="card" id="gameCard" style="display:none;">
@@ -178,7 +166,7 @@ canvas{
     <option value="handwriting">Handwriting</option>
   </select><br />
   <canvas id="canvas"></canvas><br />
-  <button onclick="clearCanvas()">Clear Drawing - Because You Messed Up</button>
+  <button onclick="clearCanvas()">Clear Drawing</button>
   <button id="addEntryBtn" onclick="addEntry()">Add Entry</button>
 </div>
 
@@ -350,43 +338,6 @@ function clearCanvas() {
   ctx.fillRect(0, 0, 320, 160);
 }
 
-  async function resetRoom(){
-  if(!confirm("Reset the room? This will delete all entries and scores.")) return;
-
-  // 1) Delete all entries
-  const entriesSnap = await roomRef.collection('entries').get();
-  const batch = db.batch();
-  entriesSnap.forEach(doc => batch.delete(doc.ref));
-  await batch.commit();
-
-  // 2) Reset players
-  const roomSnap = await roomRef.get();
-  const data = roomSnap.data() || {};
-  const players = data.players || {};
-
-  const resetPlayers = {};
-  for(const p in players){
-    resetPlayers[p] = { count: 0, score: 0 };
-  }
-
-  // 3) Reset room state
-  await roomRef.set({
-    players: resetPlayers,
-    turnIndex: 0,
-    currentEntryId: null,
-    gameOver: false,
-    winnerNames: [],
-    winnerScore: 0
-  }, { merge: true });
-
-  // 4) Reset UI locally
-  document.getElementById('winnerCard').style.display = 'none';
-  document.getElementById('entry').innerHTML = '';
-  stopWaitingVerbRotation();
-
-  showFeedback("Room reset 🎄", "#28a745");
-}
-
 /* -----------------------------
    UI Helpers
 ------------------------------ */
@@ -512,9 +463,7 @@ function listenUpdates() {
 
       document.getElementById('winnerCard').style.display = 'block';
       document.getElementById('winnerCard').textContent =
-        `🎉 Winner: ${winners.join(', ')} with ${score} points! 🎉
-         
-    Everyone else - Sucks to Suck';
+        `🎉 Winner: ${winners.join(', ')} with ${score} points! 🎉`;
 
       document.getElementById('playCard').style.display = 'none';
       document.getElementById('waitingMsg').style.display = 'none';
@@ -793,8 +742,3 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
-
-
-
-
-

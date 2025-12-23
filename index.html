@@ -7,43 +7,92 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Indie+Flower&family=Caveat&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
+
 <style>
 /* --- Dark Cards on Mostly-White Xmas Background --- */
-body { 
-  font-family: Roboto, sans-serif; 
+body {
+  font-family: Roboto, sans-serif;
   background-color: #f5f5f5;  /* fallback if image fails */
   background-repeat: no-repeat;
   background-position: center center;
   background-attachment: fixed;
   background-size: cover;
-  color: #fff; 
-  padding:20px; 
-  margin:0;
+  color: #fff;
+  padding: 20px;
+  margin: 0;
 }
-h1 { 
-  margin-bottom:10px; 
-  color:#000; 
-  text-shadow: 1px 1px 2px #fff; 
-  text-align:center; 
-}
-.card { 
-  background: rgba(20,20,20,0.88); 
-  padding:15px; 
-  border-radius:10px; 
-  box-shadow:0 4px 10px rgba(0,0,0,0.5); 
-  margin-bottom:15px; 
-  color:#fff;
-}
-input, select, button { padding:8px; margin:5px 0; border-radius:5px; border:none; font-size:16px; }
-input, select { background:#444; color:#fff; width:100%; box-sizing:border-box; }
-button { cursor:pointer; background:#d9534f; color:#fff; border:none; width:100%; }
-button:hover { background:#c9302c; }
-button:disabled { opacity:0.55; cursor:not-allowed; }
 
-canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action:none; width:100%; height:auto; }
-.entry-card { font-size:26px; text-align:center; margin:15px 0; color:#ffd700; }
+h1 {
+  margin-bottom: 10px;
+  color: #000;
+  text-shadow: 1px 1px 2px #fff;
+  text-align: center;
+}
+
+.card {
+  background: rgba(20,20,20,0.88);
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  margin-bottom: 15px;
+  color: #fff;
+}
+
+input, select, button {
+  padding: 8px;
+  margin: 5px 0;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+}
+
+input, select {
+  background: #444;
+  color: #fff;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+button {
+  cursor: pointer;
+  background: #d9534f;
+  color: #fff;
+  border: none;
+  width: 100%;
+}
+
+button:hover { background: #c9302c; }
+button:disabled { opacity: 0.55; cursor: not-allowed; }
+
+canvas {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
+  touch-action: none;
+  width: 100%;
+  height: auto;
+}
+
+.entry-card {
+  font-size: 26px;
+  text-align: center;
+  margin: 15px 0;
+  color: #ffd700;
+}
+
 .done { color: #28a745; font-weight: bold; }
-#winnerCard { display:none; background: rgba(255,215,0,0.9); color:#000; font-size:24px; font-weight:bold; text-align:center; padding:20px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.7); }
+
+#winnerCard {
+  display: none;
+  background: rgba(255,215,0,0.9);
+  color: #000;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+}
 
 /* Feedback box */
 #feedbackBox {
@@ -76,8 +125,8 @@ canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action
 }
 </style>
 </head>
-<body>
 
+<body>
 <h1>🎄 2025 Presents to Present 🎄</h1>
 
 <div id="feedbackBox"></div>
@@ -127,8 +176,16 @@ canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action
 <!-- Game Play -->
 <div class="card" id="playCard" style="display:none;">
   <h3>Game</h3>
+
   <button id="drawBtn" onclick="drawEntry()">Draw Random Entry</button>
+
+  <!-- Non-turn players see this only -->
+  <div id="waitingMsg" style="text-align:center; font-size:16px; opacity:0.9; margin:10px 0; display:none;">
+    Waiting for <b><span id="waitingFor">—</span></b> to guess...
+  </div>
+
   <div id="entry"></div>
+
   <select id="guess"></select>
   <button id="guessBtn" onclick="submitGuess()">Guess</button>
 </div>
@@ -142,9 +199,10 @@ canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action
 <div id="winnerCard"></div>
 
 <script>
-// --- Random mostly-white Xmas background (runs immediately) ---
+/* -----------------------------
+   Random mostly-white Xmas background
+------------------------------ */
 const xmasBackgrounds = [
-  // NOTE: Unsplash images should include parameters for reliable sizing/caching.
   "https://images.unsplash.com/photo-1608889175250-c3b0c166c4f3?auto=format&fit=crop&w=1920&q=80",
   "https://images.unsplash.com/photo-1543589077-47d81606c1bf?auto=format&fit=crop&w=1920&q=80",
   "https://images.unsplash.com/photo-1512389098783-66b81f86e199?auto=format&fit=crop&w=1920&q=80",
@@ -154,7 +212,9 @@ const xmasBackgrounds = [
 document.body.style.backgroundImage =
   `url('${xmasBackgrounds[Math.floor(Math.random()*xmasBackgrounds.length)]}')`;
 
-// --- Firebase config ---
+/* -----------------------------
+   Firebase
+------------------------------ */
 const firebaseConfig = {
   apiKey: "AIzaSyBcfYtibV2vzCG_rchAX8KqUnfJNbnpyQM",
   authDomain: "xmas-guessing-game-e744e.firebaseapp.com",
@@ -167,25 +227,31 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+/* -----------------------------
+   State
+------------------------------ */
 let roomRef;
 let playerName = '';
 let roomId = '';
 const fonts = ['Pacifico','Indie Flower','Caveat','Lobster','Roboto'];
 let currentEntry = null;
 
-// --- Canvas setup ---
+/* -----------------------------
+   Canvas (white background)
+------------------------------ */
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 ctx.fillStyle = "white";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
+
 let drawing = false;
 
-// --- Desktop drawing ---
+// Desktop
 canvas.addEventListener('mousedown', () => drawing = true);
 canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
 canvas.addEventListener('mousemove', draw);
 
-// --- Mobile drawing ---
+// Mobile
 canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; drawTouch(e); });
 canvas.addEventListener('touchmove', e => { e.preventDefault(); drawTouch(e); });
 canvas.addEventListener('touchend', e => { e.preventDefault(); drawing = false; ctx.beginPath(); });
@@ -209,19 +275,20 @@ function drawTouch(e) {
   ctx.beginPath();
   ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top);
 }
-function clearCanvas() { 
-  ctx.clearRect(0,0,canvas.width,canvas.height); 
+function clearCanvas() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle = "white";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
-// Disable text input if handwriting selected
+/* -----------------------------
+   UI Helpers
+------------------------------ */
 function toggleTextInput(){
   const style = document.getElementById('style').value;
-  document.getElementById('entryText').disabled = (style==='handwriting');
+  document.getElementById('entryText').disabled = (style === 'handwriting');
 }
 
-// --- Feedback Box Function ---
 function showFeedback(message,color){
   const fb = document.getElementById('feedbackBox');
   fb.textContent = message;
@@ -229,14 +296,41 @@ function showFeedback(message,color){
   fb.style.color = '#fff';
   fb.classList.add('show');
   fb.style.display='block';
-  setTimeout(()=>{ fb.classList.remove('show'); },2000);
+  setTimeout(()=>{ fb.classList.remove('show'); }, 2000);
 }
 
-// --- Helpers for Turn System ---
+function copyRoomCode() {
+  navigator.clipboard.writeText(roomId)
+    .then(() => alert('Room code copied!'))
+    .catch(()=>alert('Failed to copy.'));
+}
+
 function sortedPlayerNames(playersObj){
   return Object.keys(playersObj || {}).sort((a,b)=>a.localeCompare(b));
 }
 
+function renderCurrentEntry(entry){
+  const div = document.getElementById('entry');
+  div.innerHTML = '';
+  if(!entry) return;
+
+  if(entry.style === 'handwriting'){
+    const img = document.createElement('img');
+    img.src = entry.image;
+    img.width = 300;
+    div.appendChild(img);
+  } else {
+    const p = document.createElement('div');
+    p.className = 'entry-card';
+    p.style.fontFamily = entry.font;
+    p.textContent = entry.text;
+    div.appendChild(p);
+  }
+}
+
+/* -----------------------------
+   Turn State Initialization
+------------------------------ */
 async function ensureTurnStateExists(){
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(roomRef);
@@ -244,6 +338,7 @@ async function ensureTurnStateExists(){
     const players = data.players || {};
     const order = sortedPlayerNames(players);
 
+    // Initialize if missing
     if(!data.turnOrder || typeof data.turnIndex !== 'number'){
       tx.set(roomRef, {
         turnOrder: order,
@@ -253,6 +348,7 @@ async function ensureTurnStateExists(){
       return;
     }
 
+    // Keep turnOrder synced deterministically
     const existing = Array.isArray(data.turnOrder) ? data.turnOrder : [];
     const same = existing.length === order.length && existing.every((v,i)=>v===order[i]);
     if(!same){
@@ -267,7 +363,9 @@ async function ensureTurnStateExists(){
   });
 }
 
-// --- Join Room ---
+/* -----------------------------
+   Join Room
+------------------------------ */
 async function joinRoom() {
   playerName = document.getElementById('playerName').value.trim();
   roomId = document.getElementById('roomId').value.trim();
@@ -275,8 +373,10 @@ async function joinRoom() {
 
   roomRef = db.collection('games').doc(roomId);
 
-  await roomRef.set({ players: {[playerName]: {count:0, score:0}} }, { merge:true });
+  // Add player
+  await roomRef.set({ players: { [playerName]: {count:0, score:0} } }, { merge:true });
 
+  // Show UI
   document.getElementById('roomCard').style.display='none';
   document.getElementById('roomInfoCard').style.display='block';
   document.getElementById('displayRoomCode').textContent = roomId;
@@ -284,27 +384,24 @@ async function joinRoom() {
   document.getElementById('gameCard').style.display='block';
   document.getElementById('entryCard').style.display='block';
   document.getElementById('turnCard').style.display='block';
+  document.getElementById('playCard').style.display='block';
   document.getElementById('remainingCard').style.display='block';
 
   await ensureTurnStateExists();
   listenUpdates();
 }
 
-// Copy room code
-function copyRoomCode() {
-  navigator.clipboard.writeText(roomId)
-    .then(() => alert('Room code copied!'))
-    .catch(()=>alert('Failed to copy.'));
-}
-
-// --- Firebase Listeners ---
+/* -----------------------------
+   Live Updates
+   - Only the turn player can SEE the entry.
+------------------------------ */
 function listenUpdates() {
   roomRef.onSnapshot(async (snapshot) => {
     const data = snapshot.data() || {};
     updatePlayersList(data.players || {});
     await updateRemaining();
 
-    const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(data.players);
+    const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(data.players || {});
     const turnIndex = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
     const currentTurnPlayer = order[turnIndex] || '—';
 
@@ -312,60 +409,56 @@ function listenUpdates() {
 
     const isMyTurn = (currentTurnPlayer === playerName);
 
+    // Enable actions only for the current turn player
     document.getElementById('drawBtn').disabled = !isMyTurn;
     document.getElementById('guessBtn').disabled = !isMyTurn;
+    document.getElementById('guess').disabled = !isMyTurn;
+
+    // Waiting msg for non-turn players
+    document.getElementById('waitingFor').textContent = currentTurnPlayer;
 
     if(!isMyTurn){
-      currentEntry = null;
+      document.getElementById('waitingMsg').style.display = 'block';
       document.getElementById('entry').innerHTML = '';
+      currentEntry = null;
+      return; // IMPORTANT: do not fetch/render entry for non-turn players
+    } else {
+      document.getElementById('waitingMsg').style.display = 'none';
     }
 
+    // Turn player ONLY: fetch + render shared currentEntryId (if any)
     if(data.currentEntryId){
       const entryDoc = await roomRef.collection('entries').doc(data.currentEntryId).get();
       if(entryDoc.exists){
         currentEntry = { id: entryDoc.id, ...entryDoc.data() };
         renderCurrentEntry(currentEntry);
+      } else {
+        currentEntry = null;
+        document.getElementById('entry').innerHTML = '';
       }
     } else {
-      // If no shared entry, clear the display for everyone
-      document.getElementById('entry').innerHTML = '';
       currentEntry = null;
+      document.getElementById('entry').innerHTML = '';
     }
   });
 }
 
-// --- Render entry (shared) ---
-function renderCurrentEntry(entry){
-  const div = document.getElementById('entry');
-  div.innerHTML = '';
-  if(!entry) return;
-
-  if(entry.style==='handwriting'){
-    const img = document.createElement('img');
-    img.src = entry.image;
-    img.width = 300;
-    div.appendChild(img);
-  } else {
-    const p = document.createElement('div');
-    p.className='entry-card';
-    p.style.fontFamily = entry.font;
-    p.textContent = entry.text;
-    div.appendChild(p);
-  }
-}
-
-// --- Update Players ---
+/* -----------------------------
+   Players UI
+------------------------------ */
 function updatePlayersList(players){
   const list = document.getElementById('players');
-  list.innerHTML='';
+  list.innerHTML = '';
+
   const authorSelect = document.getElementById('entryAuthor');
   const guessSelect = document.getElementById('guess');
-  authorSelect.innerHTML=''; guessSelect.innerHTML='';
+  authorSelect.innerHTML = '';
+  guessSelect.innerHTML = '';
 
   for(const p in players){
     const li = document.createElement('li');
     li.textContent = `${p} (${players[p].count || 0}/3, score: ${players[p].score || 0})`;
-    if((players[p].count||0) >= 3) li.className='done';
+    if((players[p].count||0) >= 3) li.className = 'done';
     list.appendChild(li);
 
     const o1 = document.createElement('option'); o1.value=p; o1.textContent=p; authorSelect.appendChild(o1);
@@ -373,7 +466,9 @@ function updatePlayersList(players){
   }
 }
 
-// --- Add Entry ---
+/* -----------------------------
+   Add Entry
+------------------------------ */
 async function addEntry() {
   const text = document.getElementById('entryText').value.trim();
   const author = document.getElementById('entryAuthor').value;
@@ -402,11 +497,16 @@ async function addEntry() {
   await updateRemaining();
 }
 
-// --- Draw Entry (ONLY current turn player can press) ---
-// --- Draw Entry (turn player can redraw ONLY if the current drawn entry is theirs) ---
+/* -----------------------------
+   Draw Entry
+   - Only current turn player can draw.
+   - If you draw YOUR OWN entry, you may press draw again (redraw).
+   - If you drew someone else's entry, you cannot redraw.
+   - It prefers not to pick your own entry when others exist.
+------------------------------ */
 async function drawEntry() {
-  // 1) Verify it's your turn, and if an entry is already drawn, only allow redraw if it's YOUR entry
-  try {
+  // A) Validate it's your turn; if already drawn, only allow redraw if the drawn entry is yours
+  try{
     await db.runTransaction(async (tx) => {
       const roomSnap = await tx.get(roomRef);
       const data = roomSnap.data() || {};
@@ -415,38 +515,34 @@ async function drawEntry() {
       const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
       const turnPlayer = order[idx];
 
-      if (turnPlayer !== playerName) throw new Error("Not your turn");
+      if(turnPlayer !== playerName) throw new Error("Not your turn");
 
-      // If there's already a current entry, only allow redraw if it is yours
-      if (data.currentEntryId) {
+      if(data.currentEntryId){
         const entryRef = roomRef.collection('entries').doc(data.currentEntryId);
         const entrySnap = await tx.get(entryRef);
-        if (!entrySnap.exists) throw new Error("Current entry missing");
+        if(!entrySnap.exists) throw new Error("Current entry missing");
 
         const entryData = entrySnap.data() || {};
-        if (entryData.author !== playerName) {
+        if(entryData.author !== playerName){
           throw new Error("You can only redraw if you drew your own entry");
         }
       }
     });
-  } catch (err) {
+  } catch(err){
     return showFeedback(err.message || "Cannot draw now", "#d9534f");
   }
 
-  // 2) Get all in-play entries
-  const snapshot = await roomRef.collection('entries').where('in_play', '==', true).get();
-  const entries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  // B) Choose an entry (prefer not your own if possible)
+  const snap = await roomRef.collection('entries').where('in_play','==',true).get();
+  const entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if(entries.length === 0) return showFeedback("No entries left", "red");
 
-  if (entries.length === 0) return showFeedback("No entries left", "red");
-
-  // 3) Prefer NOT drawing your own entry (so redraw usually gives a different person)
   const nonSelf = entries.filter(e => e.author !== playerName);
-  const pool = (nonSelf.length > 0) ? nonSelf : entries; // fallback if only your entries remain
+  const pool = (nonSelf.length > 0) ? nonSelf : entries;
+  const picked = pool[Math.floor(Math.random()*pool.length)];
 
-  const picked = pool[Math.floor(Math.random() * pool.length)];
-
-  // 4) Commit chosen entry as shared currentEntryId (overwriting allowed only if previous was yours)
-  try {
+  // C) Commit it (still your turn; overwrite allowed only if previous was yours)
+  try{
     await db.runTransaction(async (tx) => {
       const roomSnap = await tx.get(roomRef);
       const data = roomSnap.data() || {};
@@ -455,33 +551,34 @@ async function drawEntry() {
       const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
       const turnPlayer = order[idx];
 
-      if (turnPlayer !== playerName) throw new Error("Not your turn");
+      if(turnPlayer !== playerName) throw new Error("Not your turn");
 
-      // If an entry is already drawn, only overwrite if it's your entry
-      if (data.currentEntryId) {
+      if(data.currentEntryId){
         const entryRef = roomRef.collection('entries').doc(data.currentEntryId);
         const entrySnap = await tx.get(entryRef);
-        if (!entrySnap.exists) throw new Error("Current entry missing");
-
+        if(!entrySnap.exists) throw new Error("Current entry missing");
         const entryData = entrySnap.data() || {};
-        if (entryData.author !== playerName) {
+        if(entryData.author !== playerName){
           throw new Error("You can only redraw if you drew your own entry");
         }
       }
 
-      tx.set(roomRef, { currentEntryId: picked.id }, { merge: true });
+      tx.set(roomRef, { currentEntryId: picked.id }, { merge:true });
     });
 
-    if (picked.author === playerName) {
+    if(picked.author === playerName){
       showFeedback("You drew your own — tap Draw again to redraw ✅", "#f0ad4e");
     }
-  } catch (err) {
+  } catch(err){
     return showFeedback(err.message || "Draw failed", "#d9534f");
   }
 }
 
-
-// --- Submit Guess (ONE guess then auto-advance turn) ---
+/* -----------------------------
+   Submit Guess
+   - ONE guess, then turn advances automatically.
+   - Only the current turn player can guess.
+------------------------------ */
 async function submitGuess() {
   const guess = document.getElementById('guess').value;
   if(!guess) return;
@@ -493,8 +590,7 @@ async function submitGuess() {
   const order = Array.isArray(roomData.turnOrder) ? roomData.turnOrder : sortedPlayerNames(roomData.players || {});
   const idx = (typeof roomData.turnIndex === 'number') ? roomData.turnIndex : 0;
   const turnPlayer = order[idx];
-
-  if(turnPlayer !== playerName) return showFeedback("Not your turn",'#d9534f');
+  if(turnPlayer !== playerName) return showFeedback("Not your turn", "#d9534f");
 
   const entryDoc = await roomRef.collection('entries').doc(roomData.currentEntryId).get();
   if(!entryDoc.exists) return showFeedback('Entry missing','#d9534f');
@@ -502,6 +598,7 @@ async function submitGuess() {
   currentEntry = { id: entryDoc.id, ...entryDoc.data() };
   const wasCorrect = (guess === currentEntry.author);
 
+  // Transaction: apply result + advance turn + clear currentEntryId
   try{
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(roomRef);
@@ -525,43 +622,44 @@ async function submitGuess() {
       tx.set(roomRef, { turnIndex: next, currentEntryId: null }, { merge:true });
     });
   } catch(err){
-    return showFeedback(err.message || 'Guess failed','#d9534f');
+    return showFeedback(err.message || 'Guess failed', '#d9534f');
   }
 
-  if(wasCorrect) showFeedback('✅ Correct!','#28a745');
-  else showFeedback('❌ Wrong!','#d9534f');
+  showFeedback(wasCorrect ? '✅ Correct!' : '❌ Wrong!', wasCorrect ? '#28a745' : '#d9534f');
 
-  // Winner check
+  // Winner check (after state update)
   const allEntries = await roomRef.collection('entries').get();
-  const remaining = allEntries.docs.filter(doc=>!doc.data().guessed_correctly);
-  if(remaining.length===0){
+  const remaining = allEntries.docs.filter(doc => !doc.data().guessed_correctly);
+  if(remaining.length === 0){
     const finalPlayers = (await roomRef.get()).data().players || {};
-    let maxScore=-1, winners=[];
+    let maxScore = -1, winners = [];
     for(const p in finalPlayers){
       const s = finalPlayers[p].score || 0;
-      if(s>maxScore){ maxScore=s; winners=[p]; }
-      else if(s===maxScore) winners.push(p);
+      if(s > maxScore){ maxScore = s; winners = [p]; }
+      else if(s === maxScore) winners.push(p);
     }
     document.getElementById('winnerCard').style.display='block';
     document.getElementById('winnerCard').textContent = `🎉 Winner: ${winners.join(', ')} with ${maxScore} points! 🎉`;
     document.getElementById('playCard').style.display='none';
   }
 
+  // Turn player view clears; next player will draw
   currentEntry = null;
-  document.getElementById('entry').innerHTML='';
+  document.getElementById('entry').innerHTML = '';
   await updateRemaining();
 }
 
-// --- Update Remaining ---
+/* -----------------------------
+   Remaining
+------------------------------ */
 async function updateRemaining(){
-  if(!roomRef) return;
-  const snapshot = await roomRef.collection('entries').where('in_play','==',true).get();
-  const remaining = snapshot.size;
+  if(!roomRef) return 0;
+  const snap = await roomRef.collection('entries').where('in_play','==',true).get();
+  const remaining = snap.size;
   document.getElementById('remaining').innerText = remaining;
-  document.getElementById('playCard').style.display = remaining>0 ? 'block' : 'none';
+  // Keep playCard visible; it also shows "waiting" for non-turn players
   return remaining;
 }
 </script>
 </body>
 </html>
-

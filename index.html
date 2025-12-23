@@ -403,9 +403,10 @@ async function addEntry() {
 }
 
 // --- Draw Entry (ONLY current turn player can press) ---
+// --- Draw Entry (turn player can redraw ONLY if the current drawn entry is theirs) ---
 async function drawEntry() {
-  // Guard in a transaction so double clicks / multiple clients can't overwrite
-  try{
+  // 1) Verify it's your turn, and if an entry is already drawn, only allow redraw if it's YOUR entry
+  try {
     await db.runTransaction(async (tx) => {
       const roomSnap = await tx.get(roomRef);
       const data = roomSnap.data() || {};
@@ -414,20 +415,38 @@ async function drawEntry() {
       const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
       const turnPlayer = order[idx];
 
-      if(turnPlayer !== playerName) throw new Error("Not your turn");
-      if(data.currentEntryId) throw new Error("Entry already drawn");
+      if (turnPlayer !== playerName) throw new Error("Not your turn");
+
+      // If there's already a current entry, only allow redraw if it is yours
+      if (data.currentEntryId) {
+        const entryRef = roomRef.collection('entries').doc(data.currentEntryId);
+        const entrySnap = await tx.get(entryRef);
+        if (!entrySnap.exists) throw new Error("Current entry missing");
+
+        const entryData = entrySnap.data() || {};
+        if (entryData.author !== playerName) {
+          throw new Error("You can only redraw if you drew your own entry");
+        }
+      }
     });
-  } catch(err){
-    return showFeedback(err.message || 'Cannot draw now','#d9534f');
+  } catch (err) {
+    return showFeedback(err.message || "Cannot draw now", "#d9534f");
   }
 
-  const snapshot = await roomRef.collection('entries').where('in_play','==',true).get();
-  const entries = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-  if(entries.length===0) return showFeedback('No entries left','red');
+  // 2) Get all in-play entries
+  const snapshot = await roomRef.collection('entries').where('in_play', '==', true).get();
+  const entries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-  const picked = entries[Math.floor(Math.random()*entries.length)];
+  if (entries.length === 0) return showFeedback("No entries left", "red");
 
-  try{
+  // 3) Prefer NOT drawing your own entry (so redraw usually gives a different person)
+  const nonSelf = entries.filter(e => e.author !== playerName);
+  const pool = (nonSelf.length > 0) ? nonSelf : entries; // fallback if only your entries remain
+
+  const picked = pool[Math.floor(Math.random() * pool.length)];
+
+  // 4) Commit chosen entry as shared currentEntryId (overwriting allowed only if previous was yours)
+  try {
     await db.runTransaction(async (tx) => {
       const roomSnap = await tx.get(roomRef);
       const data = roomSnap.data() || {};
@@ -436,15 +455,31 @@ async function drawEntry() {
       const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
       const turnPlayer = order[idx];
 
-      if(turnPlayer !== playerName) throw new Error("Not your turn");
-      if(data.currentEntryId) throw new Error("Entry already drawn");
+      if (turnPlayer !== playerName) throw new Error("Not your turn");
 
-      tx.set(roomRef, { currentEntryId: picked.id }, { merge:true });
+      // If an entry is already drawn, only overwrite if it's your entry
+      if (data.currentEntryId) {
+        const entryRef = roomRef.collection('entries').doc(data.currentEntryId);
+        const entrySnap = await tx.get(entryRef);
+        if (!entrySnap.exists) throw new Error("Current entry missing");
+
+        const entryData = entrySnap.data() || {};
+        if (entryData.author !== playerName) {
+          throw new Error("You can only redraw if you drew your own entry");
+        }
+      }
+
+      tx.set(roomRef, { currentEntryId: picked.id }, { merge: true });
     });
-  } catch(err){
-    return showFeedback(err.message || 'Draw failed','#d9534f');
+
+    if (picked.author === playerName) {
+      showFeedback("You drew your own — tap Draw again to redraw ✅", "#f0ad4e");
+    }
+  } catch (err) {
+    return showFeedback(err.message || "Draw failed", "#d9534f");
   }
 }
+
 
 // --- Submit Guess (ONE guess then auto-advance turn) ---
 async function submitGuess() {
@@ -529,3 +564,4 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+

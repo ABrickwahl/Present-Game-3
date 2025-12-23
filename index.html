@@ -298,6 +298,12 @@ function stopWaitingVerbRotation(){
   stopWaitingVerbRotation();
 
   showFeedback("Room reset 🎄", "#28a745");
+    document.getElementById('playCard').style.display = 'block';
+document.getElementById('waitingMsg').style.display = 'none';
+document.getElementById('entry').innerHTML = '';
+currentEntry = null;
+stopWaitingVerbRotation();
+
 }
 
 /* -----------------------------
@@ -790,6 +796,7 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+
 
 
 

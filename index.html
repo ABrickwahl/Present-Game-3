@@ -147,8 +147,16 @@ canvas{
 <!-- Room Info -->
 <div class="card" id="roomInfoCard" style="display:none;">
   <h3>Room Code: <span id="displayRoomCode"></span></h3>
+
   <button onclick="copyRoomCode()">Copy Room Code</button>
+
+  <!-- ✅ Reset Room Button -->
+  <button onclick="resetRoom()"
+          style="margin-top:10px; background:#6c757d;">
+    Reset Room
+  </button>
 </div>
+
 
 <!-- Players List -->
 <div class="card" id="gameCard" style="display:none;">
@@ -253,6 +261,43 @@ function startWaitingVerbRotation(){
 function stopWaitingVerbRotation(){
   if(waitingInterval) clearInterval(waitingInterval);
   waitingInterval = null;
+}
+
+  async function resetRoom(){
+  if(!confirm("Reset the room? This will delete all entries and scores.")) return;
+
+  // 1) Delete all entries
+  const entriesSnap = await roomRef.collection('entries').get();
+  const batch = db.batch();
+  entriesSnap.forEach(doc => batch.delete(doc.ref));
+  await batch.commit();
+
+  // 2) Reset players
+  const roomSnap = await roomRef.get();
+  const data = roomSnap.data() || {};
+  const players = data.players || {};
+
+  const resetPlayers = {};
+  for(const p in players){
+    resetPlayers[p] = { count: 0, score: 0 };
+  }
+
+  // 3) Reset room state
+  await roomRef.set({
+    players: resetPlayers,
+    turnIndex: 0,
+    currentEntryId: null,
+    gameOver: false,
+    winnerNames: [],
+    winnerScore: 0
+  }, { merge: true });
+
+  // 4) Reset UI locally
+  document.getElementById('winnerCard').style.display = 'none';
+  document.getElementById('entry').innerHTML = '';
+  stopWaitingVerbRotation();
+
+  showFeedback("Room reset 🎄", "#28a745");
 }
 
 /* -----------------------------
@@ -742,4 +787,5 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+
 

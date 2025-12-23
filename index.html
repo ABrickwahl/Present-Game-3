@@ -513,9 +513,8 @@ function listenUpdates() {
       document.getElementById('winnerCard').style.display = 'block';
       document.getElementById('winnerCard').textContent =
         `🎉 Winner: ${winners.join(', ')} with ${score} points! 🎉
-         <div style="margin-top:8px; font-size:18px;">
-    Everyone else - Sucks to Suck
-  </div>';
+         
+    Everyone else - Sucks to Suck';
 
       document.getElementById('playCard').style.display = 'none';
       document.getElementById('waitingMsg').style.display = 'none';
@@ -794,6 +793,7 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+
 
 
 

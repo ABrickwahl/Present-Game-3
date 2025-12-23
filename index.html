@@ -8,22 +8,26 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Indie+Flower&family=Caveat&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
 <style>
+/* --- Dark Cards on Mostly-White Xmas Background --- */
 body { 
   font-family: Roboto, sans-serif; 
-  background: url('https://i.ibb.co/0Z6M95Z/xmas-background.jpg') no-repeat center center fixed; 
-  background-size: cover; 
+  background-color: #f5f5f5;  /* fallback if image fails */
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-attachment: fixed;
+  background-size: cover;
   color: #fff; 
   padding:20px; 
   margin:0;
 }
 h1 { 
   margin-bottom:10px; 
-  color:#000;
+  color:#000; 
   text-shadow: 1px 1px 2px #fff; 
   text-align:center; 
 }
 .card { 
-  background: rgba(30,30,30,0.85); 
+  background: rgba(20,20,20,0.88); 
   padding:15px; 
   border-radius:10px; 
   box-shadow:0 4px 10px rgba(0,0,0,0.5); 
@@ -35,11 +39,13 @@ input, select { background:#444; color:#fff; width:100%; box-sizing:border-box; 
 button { cursor:pointer; background:#d9534f; color:#fff; border:none; width:100%; }
 button:hover { background:#c9302c; }
 button:disabled { opacity:0.55; cursor:not-allowed; }
+
 canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action:none; width:100%; height:auto; }
 .entry-card { font-size:26px; text-align:center; margin:15px 0; color:#ffd700; }
 .done { color: #28a745; font-weight: bold; }
 #winnerCard { display:none; background: rgba(255,215,0,0.9); color:#000; font-size:24px; font-weight:bold; text-align:center; padding:20px; border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.7); }
 
+/* Feedback box */
 #feedbackBox {
   position: fixed;
   top: 20px;
@@ -62,6 +68,7 @@ canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action
   transform: translateX(-50%) translateY(0);
 }
 
+/* Turn banner */
 #turnBanner{
   text-align:center;
   font-weight:bold;
@@ -75,6 +82,7 @@ canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action
 
 <div id="feedbackBox"></div>
 
+<!-- Room Join -->
 <div class="card" id="roomCard">
   <h3>Create or Join Room</h3>
   <input id="playerName" placeholder="Your name" />
@@ -82,16 +90,19 @@ canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action
   <button onclick="joinRoom()">Join Room</button>
 </div>
 
+<!-- Room Info -->
 <div class="card" id="roomInfoCard" style="display:none;">
   <h3>Room Code: <span id="displayRoomCode"></span></h3>
   <button onclick="copyRoomCode()">Copy Room Code</button>
 </div>
 
+<!-- Players List -->
 <div class="card" id="gameCard" style="display:none;">
   <h3>Players</h3>
   <ul id="players"></ul>
 </div>
 
+<!-- Add Entry -->
 <div class="card" id="entryCard" style="display:none;">
   <h3>Add Entry</h3>
   <select id="entryAuthor"></select><br />
@@ -113,6 +124,7 @@ canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action
   </div>
 </div>
 
+<!-- Game Play -->
 <div class="card" id="playCard" style="display:none;">
   <h3>Game</h3>
   <button id="drawBtn" onclick="drawEntry()">Draw Random Entry</button>
@@ -121,13 +133,27 @@ canvas { border:1px solid #ccc; border-radius:6px; background:#fff; touch-action
   <button id="guessBtn" onclick="submitGuess()">Guess</button>
 </div>
 
+<!-- Remaining Entries -->
 <div class="card" id="remainingCard" style="display:none;">
   Remaining entries: <span id="remaining">0</span>
 </div>
 
+<!-- Winner Display -->
 <div id="winnerCard"></div>
 
 <script>
+// --- Random mostly-white Xmas background (runs immediately) ---
+const xmasBackgrounds = [
+  // NOTE: Unsplash images should include parameters for reliable sizing/caching.
+  "https://images.unsplash.com/photo-1608889175250-c3b0c166c4f3?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1543589077-47d81606c1bf?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1512389098783-66b81f86e199?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1545608444-f045a6db6133?auto=format&fit=crop&w=1920&q=80",
+  "https://images.unsplash.com/photo-1608231387042-66d1773070a5?auto=format&fit=crop&w=1920&q=80"
+];
+document.body.style.backgroundImage =
+  `url('${xmasBackgrounds[Math.floor(Math.random()*xmasBackgrounds.length)]}')`;
+
 // --- Firebase config ---
 const firebaseConfig = {
   apiKey: "AIzaSyBcfYtibV2vzCG_rchAX8KqUnfJNbnpyQM",
@@ -154,10 +180,12 @@ ctx.fillStyle = "white";
 ctx.fillRect(0, 0, canvas.width, canvas.height);
 let drawing = false;
 
+// --- Desktop drawing ---
 canvas.addEventListener('mousedown', () => drawing = true);
 canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
 canvas.addEventListener('mousemove', draw);
 
+// --- Mobile drawing ---
 canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; drawTouch(e); });
 canvas.addEventListener('touchmove', e => { e.preventDefault(); drawTouch(e); });
 canvas.addEventListener('touchend', e => { e.preventDefault(); drawing = false; ctx.beginPath(); });
@@ -187,12 +215,13 @@ function clearCanvas() {
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
+// Disable text input if handwriting selected
 function toggleTextInput(){
   const style = document.getElementById('style').value;
   document.getElementById('entryText').disabled = (style==='handwriting');
 }
 
-// --- Feedback ---
+// --- Feedback Box Function ---
 function showFeedback(message,color){
   const fb = document.getElementById('feedbackBox');
   fb.textContent = message;
@@ -209,15 +238,12 @@ function sortedPlayerNames(playersObj){
 }
 
 async function ensureTurnStateExists(){
-  // Create turn state if missing:
-  // turnOrder: [names], turnIndex: 0, currentEntryId: null, lockedAt: serverTimestamp
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(roomRef);
     const data = snap.data() || {};
     const players = data.players || {};
     const order = sortedPlayerNames(players);
 
-    // If no turn state exists, initialize it
     if(!data.turnOrder || typeof data.turnIndex !== 'number'){
       tx.set(roomRef, {
         turnOrder: order,
@@ -227,11 +253,9 @@ async function ensureTurnStateExists(){
       return;
     }
 
-    // Keep turnOrder in sync if players changed (stable + deterministic)
     const existing = Array.isArray(data.turnOrder) ? data.turnOrder : [];
     const same = existing.length === order.length && existing.every((v,i)=>v===order[i]);
     if(!same){
-      // Preserve current player name if possible
       const currentName = existing[data.turnIndex] ?? existing[0] ?? null;
       let newIndex = 0;
       if(currentName){
@@ -243,24 +267,6 @@ async function ensureTurnStateExists(){
   });
 }
 
-async function advanceTurn(){
-  await db.runTransaction(async (tx) => {
-    const snap = await tx.get(roomRef);
-    const data = snap.data() || {};
-    const order = Array.isArray(data.turnOrder) ? data.turnOrder : [];
-    if(order.length === 0) return;
-
-    const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
-    const next = (idx + 1) % order.length;
-
-    // advancing turn always clears the current entry so the next player draws fresh
-    tx.set(roomRef, {
-      turnIndex: next,
-      currentEntryId: null
-    }, { merge:true });
-  });
-}
-
 // --- Join Room ---
 async function joinRoom() {
   playerName = document.getElementById('playerName').value.trim();
@@ -269,7 +275,6 @@ async function joinRoom() {
 
   roomRef = db.collection('games').doc(roomId);
 
-  // Merge player into players map
   await roomRef.set({ players: {[playerName]: {count:0, score:0}} }, { merge:true });
 
   document.getElementById('roomCard').style.display='none';
@@ -299,7 +304,6 @@ function listenUpdates() {
     updatePlayersList(data.players || {});
     await updateRemaining();
 
-    // Update turn UI and enable/disable guessing based on whose turn it is
     const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(data.players);
     const turnIndex = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
     const currentTurnPlayer = order[turnIndex] || '—';
@@ -308,23 +312,24 @@ function listenUpdates() {
 
     const isMyTurn = (currentTurnPlayer === playerName);
 
-    // Enable draw/guess only if it is your turn AND there are entries left AND game not won
     document.getElementById('drawBtn').disabled = !isMyTurn;
     document.getElementById('guessBtn').disabled = !isMyTurn;
 
-    // If it becomes not your turn, clear local current entry display
     if(!isMyTurn){
       currentEntry = null;
       document.getElementById('entry').innerHTML = '';
     }
 
-    // If a currentEntryId exists, load and display it for everyone
     if(data.currentEntryId){
       const entryDoc = await roomRef.collection('entries').doc(data.currentEntryId).get();
       if(entryDoc.exists){
         currentEntry = { id: entryDoc.id, ...entryDoc.data() };
         renderCurrentEntry(currentEntry);
       }
+    } else {
+      // If no shared entry, clear the display for everyone
+      document.getElementById('entry').innerHTML = '';
+      currentEntry = null;
     }
   });
 }
@@ -333,7 +338,6 @@ function listenUpdates() {
 function renderCurrentEntry(entry){
   const div = document.getElementById('entry');
   div.innerHTML = '';
-
   if(!entry) return;
 
   if(entry.style==='handwriting'){
@@ -383,6 +387,7 @@ async function addEntry() {
   if((players[author]?.count || 0) >= 3) return showFeedback(`${author} already entered 3 items`,'red');
 
   const entry = { author, style, in_play:true, guessed_correctly:false };
+
   if(style==='handwriting') entry.image = canvas.toDataURL();
   else {
     entry.text = text;
@@ -397,49 +402,48 @@ async function addEntry() {
   await updateRemaining();
 }
 
-// --- Draw Entry (ONLY current turn player can press, but we enforce in Firestore too) ---
+// --- Draw Entry (ONLY current turn player can press) ---
 async function drawEntry() {
-  // Transaction: ensure it's my turn and there isn't already an active currentEntryId
-  await db.runTransaction(async (tx) => {
-    const roomSnap = await tx.get(roomRef);
-    const data = roomSnap.data() || {};
-    const players = data.players || {};
-    const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(players);
-    const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
-    const turnPlayer = order[idx];
+  // Guard in a transaction so double clicks / multiple clients can't overwrite
+  try{
+    await db.runTransaction(async (tx) => {
+      const roomSnap = await tx.get(roomRef);
+      const data = roomSnap.data() || {};
+      const players = data.players || {};
+      const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(players);
+      const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
+      const turnPlayer = order[idx];
 
-    if(turnPlayer !== playerName) throw new Error("Not your turn");
-    if(data.currentEntryId) throw new Error("Entry already drawn");
+      if(turnPlayer !== playerName) throw new Error("Not your turn");
+      if(data.currentEntryId) throw new Error("Entry already drawn");
+    });
+  } catch(err){
+    return showFeedback(err.message || 'Cannot draw now','#d9534f');
+  }
 
-    // fetch in-play entries (not possible directly in tx), so we do a simple query outside tx:
-  }).catch(err => {
-    showFeedback(err.message || 'Cannot draw now','#d9534f');
-    return;
-  });
-
-  // Outside tx: pick an entry
   const snapshot = await roomRef.collection('entries').where('in_play','==',true).get();
   const entries = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
   if(entries.length===0) return showFeedback('No entries left','red');
 
   const picked = entries[Math.floor(Math.random()*entries.length)];
 
-  // Commit chosen entry as the shared current entry, but only if still my turn and still empty
-  await db.runTransaction(async (tx) => {
-    const roomSnap = await tx.get(roomRef);
-    const data = roomSnap.data() || {};
-    const players = data.players || {};
-    const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(players);
-    const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
-    const turnPlayer = order[idx];
+  try{
+    await db.runTransaction(async (tx) => {
+      const roomSnap = await tx.get(roomRef);
+      const data = roomSnap.data() || {};
+      const players = data.players || {};
+      const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(players);
+      const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
+      const turnPlayer = order[idx];
 
-    if(turnPlayer !== playerName) throw new Error("Not your turn");
-    if(data.currentEntryId) throw new Error("Entry already drawn");
+      if(turnPlayer !== playerName) throw new Error("Not your turn");
+      if(data.currentEntryId) throw new Error("Entry already drawn");
 
-    tx.set(roomRef, { currentEntryId: picked.id }, { merge:true });
-  });
-
-  // local render will happen from snapshot listener
+      tx.set(roomRef, { currentEntryId: picked.id }, { merge:true });
+    });
+  } catch(err){
+    return showFeedback(err.message || 'Draw failed','#d9534f');
+  }
 }
 
 // --- Submit Guess (ONE guess then auto-advance turn) ---
@@ -447,7 +451,6 @@ async function submitGuess() {
   const guess = document.getElementById('guess').value;
   if(!guess) return;
 
-  // Only allow if there is a current entry (shared) and it's your turn
   const roomSnap = await roomRef.get();
   const roomData = roomSnap.data() || {};
   if(!roomData.currentEntryId) return showFeedback('Draw an entry first','#d9534f');
@@ -462,41 +465,38 @@ async function submitGuess() {
   if(!entryDoc.exists) return showFeedback('Entry missing','#d9534f');
 
   currentEntry = { id: entryDoc.id, ...entryDoc.data() };
+  const wasCorrect = (guess === currentEntry.author);
 
-  let wasCorrect = (guess === currentEntry.author);
+  try{
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(roomRef);
+      const data = snap.data() || {};
+      const players = data.players || {};
+      const order2 = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(players);
+      const idx2 = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
+      const turnPlayer2 = order2[idx2];
 
-  // Apply result + advance turn atomically
-  await db.runTransaction(async (tx) => {
-    const snap = await tx.get(roomRef);
-    const data = snap.data() || {};
-    const players = data.players || {};
-    const order2 = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(players);
-    const idx2 = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
-    const turnPlayer2 = order2[idx2];
+      if(turnPlayer2 !== playerName) throw new Error("Not your turn");
+      if(!data.currentEntryId) throw new Error("No entry drawn");
 
-    if(turnPlayer2 !== playerName) throw new Error("Not your turn");
-    if(!data.currentEntryId) throw new Error("No entry drawn");
+      const myScore = players[playerName]?.score || 0;
 
-    const myScore = players[playerName]?.score || 0;
+      if(wasCorrect){
+        tx.update(roomRef, { [`players.${playerName}.score`]: myScore + 1 });
+        tx.update(roomRef.collection('entries').doc(data.currentEntryId), { guessed_correctly:true, in_play:false });
+      }
 
-    // If correct: score + mark entry done
-    if(wasCorrect){
-      tx.update(roomRef, { [`players.${playerName}.score`]: myScore + 1 });
-      tx.update(roomRef.collection('entries').doc(data.currentEntryId), { guessed_correctly:true, in_play:false });
-    }
-
-    // Advance turn and clear currentEntryId regardless (ONE guess)
-    const next = (idx2 + 1) % (order2.length || 1);
-    tx.set(roomRef, { turnIndex: next, currentEntryId: null }, { merge:true });
-  }).catch(err => {
-    showFeedback(err.message || 'Guess failed','#d9534f');
-    return;
-  });
+      const next = (idx2 + 1) % (order2.length || 1);
+      tx.set(roomRef, { turnIndex: next, currentEntryId: null }, { merge:true });
+    });
+  } catch(err){
+    return showFeedback(err.message || 'Guess failed','#d9534f');
+  }
 
   if(wasCorrect) showFeedback('✅ Correct!','#28a745');
   else showFeedback('❌ Wrong!','#d9534f');
 
-  // Check winner after move (non-transaction ok)
+  // Winner check
   const allEntries = await roomRef.collection('entries').get();
   const remaining = allEntries.docs.filter(doc=>!doc.data().guessed_correctly);
   if(remaining.length===0){
@@ -512,7 +512,6 @@ async function submitGuess() {
     document.getElementById('playCard').style.display='none';
   }
 
-  // clear local display; next player will draw
   currentEntry = null;
   document.getElementById('entry').innerHTML='';
   await updateRemaining();

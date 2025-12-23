@@ -2,22 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>🎄 2025 Presents to Present 🎄</title>
+<title>Xmas Bitches</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-<!-- Firebase compat (includes Auth + Firestore + Realtime Database) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Indie+Flower&family=Caveat&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
 
 <style>
 /* --- Dark Cards on Mostly-White Xmas Background --- */
 body {
   font-family: Roboto, sans-serif;
-  background-color: #f5f5f5;  /* fallback */
+  background-color: #f5f5f5;  /* fallback if image fails */
   background-repeat: no-repeat;
   background-position: center center;
   background-attachment: fixed;
@@ -65,14 +60,17 @@ button {
   border: none;
   width: 100%;
 }
+
 button:hover { background: #c9302c; }
 button:disabled { opacity: 0.55; cursor: not-allowed; }
 
+/* ✅ FIX: canvas is not huge anymore */
 canvas{
   border: 1px solid #ccc;
   border-radius: 6px;
   background: #fff;
   touch-action: none;
+
   display: block;
   width: 320px;
   max-width: 100%;
@@ -101,12 +99,7 @@ canvas{
   box-shadow: 0 4px 10px rgba(0,0,0,0.7);
 }
 
-#turnBanner{
-  text-align:center;
-  font-weight:bold;
-  font-size:18px;
-}
-
+/* Feedback box */
 #feedbackBox {
   position: fixed;
   top: 20px;
@@ -129,11 +122,11 @@ canvas{
   transform: translateX(-50%) translateY(0);
 }
 
-/* Small helper line */
-.small {
+/* Turn banner */
+#turnBanner{
   text-align:center;
-  font-size: 13px;
-  opacity: 0.9;
+  font-weight:bold;
+  font-size:18px;
 }
 </style>
 </head>
@@ -148,8 +141,7 @@ canvas{
   <h3>Create or Join Room</h3>
   <input id="playerName" placeholder="Your name" />
   <input id="roomId" placeholder="Room code" />
-  <button id="joinBtn" onclick="joinRoom()">Join Room</button>
-  <div class="small" id="authStatus">Signing in…</div>
+  <button onclick="joinRoom()">Join Room</button>
 </div>
 
 <!-- Room Info -->
@@ -162,7 +154,6 @@ canvas{
 <div class="card" id="gameCard" style="display:none;">
   <h3>Players</h3>
   <ul id="players"></ul>
-  <div class="small">Green dot = online</div>
 </div>
 
 <!-- Add Entry -->
@@ -182,8 +173,8 @@ canvas{
 <!-- Turn Info -->
 <div class="card" id="turnCard" style="display:none;">
   <div id="turnBanner">Turn: <span id="turnPlayer">—</span></div>
-  <div class="small">
-    One guess per turn. Auto-skip after <b>120 seconds</b>.
+  <div style="text-align:center; font-size:14px; opacity:0.9; margin-top:6px;">
+    Each player gets <b>one shit</b> per turn.
   </div>
 </div>
 
@@ -193,9 +184,9 @@ canvas{
 
   <button id="drawBtn" onclick="drawEntry()">Draw Random Entry</button>
 
-  <!-- Waiting message -->
+  <!-- ✅ Waiting message w/ rotating cry synonym -->
   <div id="waitingMsg" style="text-align:center; font-size:16px; opacity:0.9; margin:10px 0; display:none;">
-    Waiting for <b><span id="waitingFor">—</span></b> to <b><span id="waitingVerb">lose their shit</span></b>...
+    Waiting for <b><span id="waitingFor">—</span></b> to <b><span id="waitingVerb">sob</span></b>...
   </div>
 
   <div id="entry"></div>
@@ -204,11 +195,12 @@ canvas{
   <button id="guessBtn" onclick="submitGuess()">Guess</button>
 </div>
 
-<!-- Remaining -->
+<!-- Remaining Entries -->
 <div class="card" id="remainingCard" style="display:none;">
   Remaining entries: <span id="remaining">0</span>
 </div>
 
+<!-- Winner Display -->
 <div id="winnerCard"></div>
 
 <script>
@@ -226,7 +218,7 @@ document.body.style.backgroundImage =
   `url('${xmasBackgrounds[Math.floor(Math.random()*xmasBackgrounds.length)]}')`;
 
 /* -----------------------------
-   Firebase init
+   Firebase
 ------------------------------ */
 const firebaseConfig = {
   apiKey: "AIzaSyBcfYtibV2vzCG_rchAX8KqUnfJNbnpyQM",
@@ -235,53 +227,28 @@ const firebaseConfig = {
   storageBucket: "xmas-guessing-game-e744e.firebasestorage.app",
   messagingSenderId: "324648115760",
   appId: "1:324648115760:web:c51e7284128906138ad7f5",
-  measurementId: "G-XL91BHP4P4",
-  // IMPORTANT: RTDB needs databaseURL for presence
-  databaseURL: "https://xmas-guessing-game-e744e-default-rtdb.firebaseio.com"
+  measurementId: "G-XL91BHP4P4"
 };
 firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
 const db = firebase.firestore();
-const rtdb = firebase.database();
 
 /* -----------------------------
-   Auth + presence globals
------------------------------- */
-let uid = null;
-let signedIn = false;
-
-/* -----------------------------
-   Cry swear “synonyms”
+   Cry synonyms (rotating while waiting)
 ------------------------------ */
 const crySynonyms = [
-  "lose their shit",
-  "freak the fuck out",
-  "rage-cry",
-  "ugly-cry",
-  "emotionally implode",
-  "spiral",
-  "panic",
-  "have a breakdown",
-  "enter goblin mode",
-  "mentally disintegrate"
+  "cry","sob","weep","wail","bawl","snivel","whimper","blubber","lament","lose thier shit","rage-quit","ugly-cry","shit a brick","panic","emotionally malfunction"
 ];
-
 let waitingInterval = null;
-let lastVerb = null;
+
 function setRandomWaitingVerb(){
-  let next;
-  do {
-    next = crySynonyms[Math.floor(Math.random()*crySynonyms.length)];
-  } while(next === lastVerb && crySynonyms.length > 1);
-  lastVerb = next;
+  const w = crySynonyms[Math.floor(Math.random()*crySynonyms.length)];
   const el = document.getElementById('waitingVerb');
-  if(el) el.textContent = next;
+  if(el) el.textContent = w;
 }
 function startWaitingVerbRotation(){
   stopWaitingVerbRotation();
   setRandomWaitingVerb();
-  waitingInterval = setInterval(setRandomWaitingVerb, 10000); // <-- slow it down here
+  waitingInterval = setInterval(setRandomWaitingVerb, 10000);
 }
 function stopWaitingVerbRotation(){
   if(waitingInterval) clearInterval(waitingInterval);
@@ -289,12 +256,22 @@ function stopWaitingVerbRotation(){
 }
 
 /* -----------------------------
-   Canvas (fixed size + crisp)
+   State
+------------------------------ */
+let roomRef;
+let playerName = '';
+let roomId = '';
+const fonts = ['Pacifico','Indie Flower','Caveat','Lobster','Roboto'];
+let currentEntry = null;
+
+/* -----------------------------
+   Canvas setup (fixed size + crisp drawing)
 ------------------------------ */
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-function resizeCanvasFixed(){
+function resizeCanvasToFixed(){
+  // Match CSS: 320x160 (but keep crisp on high DPI)
   const cssW = 320;
   const cssH = 160;
   const dpr = window.devicePixelRatio || 1;
@@ -304,24 +281,28 @@ function resizeCanvasFixed(){
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
 
-  // draw in CSS pixels
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  ctx.fillStyle = "#fff";
+  // White background
+  ctx.fillStyle = "white";
   ctx.fillRect(0, 0, cssW, cssH);
+
+  // Default stroke style
   ctx.strokeStyle = "#000";
 }
-resizeCanvasFixed();
+resizeCanvasToFixed();
 
 let drawing = false;
 
+// Desktop drawing
 canvas.addEventListener('mousedown', () => drawing = true);
 canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
 canvas.addEventListener('mousemove', draw);
 
-canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; drawTouch(e); }, {passive:false});
-canvas.addEventListener('touchmove', e => { e.preventDefault(); drawTouch(e); }, {passive:false});
-canvas.addEventListener('touchend', e => { e.preventDefault(); drawing = false; ctx.beginPath(); }, {passive:false});
+// Mobile drawing
+canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; drawTouch(e); });
+canvas.addEventListener('touchmove', e => { e.preventDefault(); drawTouch(e); });
+canvas.addEventListener('touchend', e => { e.preventDefault(); drawing = false; ctx.beginPath(); });
 
 function draw(e) {
   if(!drawing) return;
@@ -331,10 +312,10 @@ function draw(e) {
 
   ctx.lineWidth = 2;
   ctx.lineCap = 'round';
-  ctx.lineTo(x,y);
+  ctx.lineTo(x, y);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(x,y);
+  ctx.moveTo(x, y);
 }
 function drawTouch(e) {
   if(!drawing) return;
@@ -345,53 +326,34 @@ function drawTouch(e) {
 
   ctx.lineWidth = 2;
   ctx.lineCap = 'round';
-  ctx.lineTo(x,y);
+  ctx.lineTo(x, y);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(x,y);
+  ctx.moveTo(x, y);
 }
-function clearCanvas(){
-  ctx.clearRect(0,0,320,160);
-  ctx.fillStyle="#fff";
-  ctx.fillRect(0,0,320,160);
+function clearCanvas() {
+  // Clear to white in CSS coordinates (320x160)
+  ctx.clearRect(0, 0, 320, 160);
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, 320, 160);
 }
 
 /* -----------------------------
-   Game state
+   UI Helpers
 ------------------------------ */
-let roomRef = null;
-let roomId = "";
-let playerName = "";
+function toggleTextInput(){
+  const style = document.getElementById('style').value;
+  document.getElementById('entryText').disabled = (style === 'handwriting');
+}
 
-const fonts = ['Pacifico','Indie Flower','Caveat','Lobster','Roboto'];
-
-let currentEntry = null;      // local for turn player only
-let turnViewUnsub = null;     // unsub function
-let roomUnsub = null;
-
-const TURN_TIMEOUT_MS = 120 * 1000; // 120 seconds
-
-// Presence map from RTDB: status[uid] = {state:'online'|'offline', name, last_changed}
-let presenceMap = {};
-let presenceRef = null;
-let presenceListenerAttached = false;
-
-/* -----------------------------
-   UI helpers
------------------------------- */
 function showFeedback(message,color){
   const fb = document.getElementById('feedbackBox');
   fb.textContent = message;
   fb.style.backgroundColor = color;
   fb.style.color = '#fff';
   fb.classList.add('show');
-  fb.style.display='block';
-  setTimeout(()=>{ fb.classList.remove('show'); },2000);
-}
-
-function toggleTextInput(){
-  const style = document.getElementById('style').value;
-  document.getElementById('entryText').disabled = (style === 'handwriting');
+  fb.style.display = 'block';
+  setTimeout(()=>{ fb.classList.remove('show'); }, 2000);
 }
 
 function copyRoomCode() {
@@ -400,12 +362,8 @@ function copyRoomCode() {
     .catch(()=>alert('Failed to copy.'));
 }
 
-function sortedPlayerUids(playersObj){
+function sortedPlayerNames(playersObj){
   return Object.keys(playersObj || {}).sort((a,b)=>a.localeCompare(b));
-}
-
-function nameForUid(players, uid){
-  return players?.[uid]?.name || "Unknown";
 }
 
 function renderCurrentEntry(entry){
@@ -427,251 +385,122 @@ function renderCurrentEntry(entry){
   }
 }
 
-function clearEntryUI(){
-  document.getElementById('entry').innerHTML = '';
-  currentEntry = null;
-}
-
-/* -----------------------------
-   AUTH: anonymous sign in
------------------------------- */
-async function ensureAuth(){
-  if(signedIn) return;
-  document.getElementById('authStatus').textContent = "Signing in…";
-
-  auth.onAuthStateChanged(async (user) => {
-    if(user){
-      uid = user.uid;
-      signedIn = true;
-      document.getElementById('authStatus').textContent = "Signed in ✅";
-      document.getElementById('joinBtn').disabled = false;
-    } else {
-      signedIn = false;
-      uid = null;
-      document.getElementById('authStatus').textContent = "Signing in…";
-    }
-  });
-
-  try{
-    document.getElementById('joinBtn').disabled = true;
-    await auth.signInAnonymously();
-  } catch(err){
-    document.getElementById('authStatus').textContent = "Auth failed ❌";
-    showFeedback("Auth failed: " + (err.message || err), "#d9534f");
-  }
-}
-ensureAuth();
-
-/* -----------------------------
-   Presence: RTDB onDisconnect
-   Path: /status/{roomId}/{uid}
------------------------------- */
-function attachPresence(roomId, displayName){
-  if(!uid) return;
-  if(presenceRef) {
-    // detach old
-    presenceRef.off();
-    presenceRef = null;
-    presenceListenerAttached = false;
-    presenceMap = {};
-  }
-
-  presenceRef = rtdb.ref(`/status/${roomId}`);
-
-  // 1) Listen to room presence list (everyone)
-  if(!presenceListenerAttached){
-    presenceRef.on('value', snap => {
-      presenceMap = snap.val() || {};
-      // Players UI will show online dot from this map
-      // (Room snapshot will call updatePlayersList again anyway)
-    });
-    presenceListenerAttached = true;
-  }
-
-  // 2) Set my presence with onDisconnect
-  const myRef = rtdb.ref(`/status/${roomId}/${uid}`);
-  const connectedRef = rtdb.ref(".info/connected");
-
-  connectedRef.on("value", (snap) => {
-    if(snap.val() === false) return;
-
-    const online = {
-      state: "online",
-      name: displayName,
-      last_changed: firebase.database.ServerValue.TIMESTAMP
-    };
-
-    const offline = {
-      state: "offline",
-      name: displayName,
-      last_changed: firebase.database.ServerValue.TIMESTAMP
-    };
-
-    // When I disconnect, mark offline
-    myRef.onDisconnect().set(offline);
-
-    // And mark online now
-    myRef.set(online);
-  });
-
-  // Best-effort on tab close (RTDB onDisconnect handles crashes too)
-  window.addEventListener("beforeunload", () => {
-    myRef.set({
-      state: "offline",
-      name: displayName,
-      last_changed: firebase.database.ServerValue.TIMESTAMP
-    });
-  });
-}
-
 /* -----------------------------
    Turn State Initialization
-   We store:
-   - players: { uid: {name, count, score} }
-   - turnOrder: [uid, uid...]
-   - turnIndex: number
-   - currentTurnUid: uid
-   - turnStartedAt: timestamp
-   - currentEntryId: string|null (entry doc id)
 ------------------------------ */
 async function ensureTurnStateExists(){
   await db.runTransaction(async (tx) => {
     const snap = await tx.get(roomRef);
     const data = snap.data() || {};
     const players = data.players || {};
-    const order = sortedPlayerUids(players);
+    const order = sortedPlayerNames(players);
 
-    const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
-    const currentTurnUid = order[idx] || order[0] || null;
-
-    if(!Array.isArray(data.turnOrder) || typeof data.turnIndex !== 'number' || !data.currentTurnUid){
+    if(!data.turnOrder || typeof data.turnIndex !== 'number'){
       tx.set(roomRef, {
         turnOrder: order,
         turnIndex: 0,
-        currentTurnUid: order[0] || null,
-        turnStartedAt: firebase.firestore.FieldValue.serverTimestamp(),
         currentEntryId: null
       }, { merge:true });
       return;
     }
 
-    // Keep turnOrder synced
-    const existing = data.turnOrder || [];
+    const existing = Array.isArray(data.turnOrder) ? data.turnOrder : [];
     const same = existing.length === order.length && existing.every((v,i)=>v===order[i]);
     if(!same){
-      const current = data.currentTurnUid || existing[data.turnIndex] || existing[0] || null;
+      const currentName = existing[data.turnIndex] ?? existing[0] ?? null;
       let newIndex = 0;
-      if(current){
-        const found = order.indexOf(current);
-        newIndex = (found >= 0) ? found : 0;
+      if(currentName){
+        const idx = order.indexOf(currentName);
+        newIndex = (idx >= 0) ? idx : 0;
       }
-      const newTurnUid = order[newIndex] || order[0] || null;
-
-      tx.set(roomRef, {
-        turnOrder: order,
-        turnIndex: newIndex,
-        currentTurnUid: newTurnUid
-      }, { merge:true });
-    }
-
-    // If currentTurnUid missing somehow
-    if(!data.currentTurnUid && currentTurnUid){
-      tx.set(roomRef, { currentTurnUid }, { merge:true });
+      tx.set(roomRef, { turnOrder: order, turnIndex: newIndex }, { merge:true });
     }
   });
 }
 
 /* -----------------------------
-   Auto-skip after 120 seconds
-   Any client may attempt it; transaction prevents double-advance.
------------------------------- */
-async function maybeAutoSkip(roomData){
-  if(!roomRef) return;
-  if(!roomData?.currentTurnUid) return;
-
-  const startedAt = roomData.turnStartedAt;
-  if(!startedAt || !startedAt.toDate) return;
-
-  const elapsed = Date.now() - startedAt.toDate().getTime();
-  if(elapsed < TURN_TIMEOUT_MS) return;
-
-  // If turn player is offline OR just stalled, we skip after 120s either way.
-  // But if they are online and actively playing, they will likely have advanced already.
-  try{
-    await db.runTransaction(async (tx) => {
-      const snap = await tx.get(roomRef);
-      const data = snap.data() || {};
-      const players = data.players || {};
-      const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerUids(players);
-      if(order.length === 0) return;
-
-      const started = data.turnStartedAt;
-      if(!started || !started.toDate) return;
-
-      const elapsed2 = Date.now() - started.toDate().getTime();
-      if(elapsed2 < TURN_TIMEOUT_MS) return; // someone already reset it
-
-      const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
-      const next = (idx + 1) % order.length;
-      const nextUid = order[next] || order[0] || null;
-
-      // Clear any drawn entry and reset turn timer
-      tx.set(roomRef, {
-        turnIndex: next,
-        currentTurnUid: nextUid,
-        currentEntryId: null,
-        turnStartedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge:true });
-    });
-
-    showFeedback("⏱️ Auto-skipped turn (120s)", "#f0ad4e");
-  } catch(e){
-    // silently ignore
-  }
-}
-
-/* -----------------------------
    Join Room
 ------------------------------ */
-async function joinRoom(){
-  if(!signedIn || !uid){
-    return showFeedback("Still signing in… try again in a second.", "#f0ad4e");
-  }
-
+async function joinRoom() {
   playerName = document.getElementById('playerName').value.trim();
   roomId = document.getElementById('roomId').value.trim();
-  if(!playerName || !roomId) return alert("Enter name and room code");
+  if(!playerName || !roomId) return alert('Enter name and room code');
 
   roomRef = db.collection('games').doc(roomId);
 
-  // Ensure I exist in players (keyed by uid)
-  await roomRef.set({
-    players: {
-      [uid]: { name: playerName, count: 0, score: 0 }
-    }
-  }, { merge:true });
+  await roomRef.set({ players: { [playerName]: {count:0, score:0} } }, { merge:true });
 
-  // Presence (RTDB)
-  attachPresence(roomId, playerName);
-
-  // Show UI
-  document.getElementById('roomCard').style.display='none';
-  document.getElementById('roomInfoCard').style.display='block';
+  document.getElementById('roomCard').style.display = 'none';
+  document.getElementById('roomInfoCard').style.display = 'block';
   document.getElementById('displayRoomCode').textContent = roomId;
 
-  document.getElementById('gameCard').style.display='block';
-  document.getElementById('entryCard').style.display='block';
-  document.getElementById('turnCard').style.display='block';
-  document.getElementById('playCard').style.display='block';
-  document.getElementById('remainingCard').style.display='block';
+  document.getElementById('gameCard').style.display = 'block';
+  document.getElementById('entryCard').style.display = 'block';
+  document.getElementById('turnCard').style.display = 'block';
+  document.getElementById('playCard').style.display = 'block';
+  document.getElementById('remainingCard').style.display = 'block';
 
   await ensureTurnStateExists();
   listenUpdates();
 }
 
 /* -----------------------------
-   Update players list + selects
-   Players map is keyed by uid; we display names.
+   Live Updates
+   ✅ Only the turn player can SEE the entry.
+   ✅ Waiting verb rotates (cry synonyms) for non-turn players.
+------------------------------ */
+function listenUpdates() {
+  roomRef.onSnapshot(async (snapshot) => {
+    const data = snapshot.data() || {};
+    updatePlayersList(data.players || {});
+    await updateRemaining();
+
+    const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(data.players || {});
+    const turnIndex = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
+    const currentTurnPlayer = order[turnIndex] || '—';
+
+    document.getElementById('turnPlayer').textContent = currentTurnPlayer;
+
+    const isMyTurn = (currentTurnPlayer === playerName);
+
+    document.getElementById('drawBtn').disabled = !isMyTurn;
+    document.getElementById('guessBtn').disabled = !isMyTurn;
+    document.getElementById('guess').disabled = !isMyTurn;
+
+    document.getElementById('waitingFor').textContent = currentTurnPlayer;
+
+    if(!isMyTurn){
+      document.getElementById('waitingMsg').style.display = 'block';
+      startWaitingVerbRotation();
+
+      // 🔒 Hide entry for everyone else
+      document.getElementById('entry').innerHTML = '';
+      currentEntry = null;
+      return; // IMPORTANT: do not fetch/render entry for non-turn players
+    } else {
+      document.getElementById('waitingMsg').style.display = 'none';
+      stopWaitingVerbRotation();
+    }
+
+    // Turn player ONLY: fetch + render shared currentEntryId (if any)
+    if(data.currentEntryId){
+      const entryDoc = await roomRef.collection('entries').doc(data.currentEntryId).get();
+      if(entryDoc.exists){
+        currentEntry = { id: entryDoc.id, ...entryDoc.data() };
+        renderCurrentEntry(currentEntry);
+      } else {
+        currentEntry = null;
+        document.getElementById('entry').innerHTML = '';
+      }
+    } else {
+      currentEntry = null;
+      document.getElementById('entry').innerHTML = '';
+    }
+  });
+}
+
+/* -----------------------------
+   Players UI
 ------------------------------ */
 function updatePlayersList(players){
   const list = document.getElementById('players');
@@ -682,72 +511,42 @@ function updatePlayersList(players){
   authorSelect.innerHTML = '';
   guessSelect.innerHTML = '';
 
-  const uids = Object.keys(players || {});
-  for(const puid of uids){
-    const name = players[puid]?.name || "Unknown";
-
-    const online = presenceMap?.[puid]?.state === "online";
-    const dot = online ? "🟢" : "⚫";
+  for(const p in players){
     const li = document.createElement('li');
-
-    const count = players[puid]?.count || 0;
-    const score = players[puid]?.score || 0;
-
-    li.textContent = `${dot} ${name} (${count}/3, score: ${score})`;
-    if(count >= 3) li.className='done';
+    li.textContent = `${p} (${players[p].count || 0}/3, score: ${players[p].score || 0})`;
+    if((players[p].count||0) >= 3) li.className = 'done';
     list.appendChild(li);
 
-    const o1 = document.createElement('option');
-    o1.value = puid;
-    o1.textContent = name;
-    authorSelect.appendChild(o1);
-
-    const o2 = document.createElement('option');
-    o2.value = puid;
-    o2.textContent = name;
-    guessSelect.appendChild(o2);
+    const o1 = document.createElement('option'); o1.value=p; o1.textContent=p; authorSelect.appendChild(o1);
+    const o2 = document.createElement('option'); o2.value=p; o2.textContent=p; guessSelect.appendChild(o2);
   }
 }
 
 /* -----------------------------
-   Entries
-   entries/{entryId} is PRIVATE to the author (rules below).
-   When drawing, we COPY the rendered content into:
-   turnViews/{turnUid}  (readable ONLY by that uid)
+   Add Entry
 ------------------------------ */
-async function addEntry(){
-  const authorUid = document.getElementById('entryAuthor').value;
-  const style = document.getElementById('style').value;
+async function addEntry() {
   const text = document.getElementById('entryText').value.trim();
+  const author = document.getElementById('entryAuthor').value;
+  const style = document.getElementById('style').value;
 
-  if(!authorUid) return showFeedback("Select an author", "#d9534f");
-  if(style === "font" && !text) return showFeedback("Enter text for font style", "#d9534f");
+  if(!author) return showFeedback('Select an author','red');
+  if(style === 'font' && !text) return showFeedback('Enter text for font style','red');
 
-  const roomSnap = await roomRef.get();
-  const roomData = roomSnap.data() || {};
-  const players = roomData.players || {};
-  const author = players?.[authorUid];
-  if(!author) return showFeedback("Author not in room", "#d9534f");
-  if((author.count || 0) >= 3) return showFeedback(`${author.name} already entered 3 items`, "#d9534f");
+  const playerDoc = await roomRef.get();
+  const players = (playerDoc.data() || {}).players || {};
+  if((players[author]?.count || 0) >= 3) return showFeedback(`${author} already entered 3 items`,'red');
 
-  const entry = {
-    authorUid,
-    authorName: author.name,
-    style,
-    in_play: true,
-    guessed_correctly: false,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
+  const entry = { author, style, in_play:true, guessed_correctly:false };
 
-  if(style === "handwriting"){
-    entry.image = canvas.toDataURL();
-  } else {
+  if(style === 'handwriting') entry.image = canvas.toDataURL();
+  else {
     entry.text = text;
     entry.font = fonts[Math.floor(Math.random()*fonts.length)];
   }
 
   await roomRef.collection('entries').doc().set(entry);
-  await roomRef.update({ [`players.${authorUid}.count`]: (author.count || 0) + 1 });
+  await roomRef.update({ [`players.${author}.count`]: (players[author]?.count||0)+1 });
 
   clearCanvas();
   document.getElementById('entryText').value = '';
@@ -756,83 +555,74 @@ async function addEntry(){
 
 /* -----------------------------
    Draw Entry
-   - Only current turn player can draw
-   - Redraw allowed only if previously drawn entry belongs to you
-   - Prefer not to draw your own entry unless only yours remain
-   - Writes the rendered content to turnViews/{uid} (private)
+   ✅ Only current turn player can draw.
+   ✅ If you draw YOUR OWN entry, you may press draw again (redraw).
+   ✅ If you drew someone else's entry, you cannot redraw.
+   ✅ Prefers not to pick your own entry when others exist.
 ------------------------------ */
-async function drawEntry(){
-  // Transaction 1: verify it's my turn + if drawn already, redraw only if my own
+async function drawEntry() {
+  // A) Validate it's your turn; if already drawn, only allow redraw if the drawn entry is yours
   try{
     await db.runTransaction(async (tx) => {
       const roomSnap = await tx.get(roomRef);
       const data = roomSnap.data() || {};
-      if(data.currentTurnUid !== uid) throw new Error("Not your turn");
+      const players = data.players || {};
+      const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(players);
+      const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
+      const turnPlayer = order[idx];
+
+      if(turnPlayer !== playerName) throw new Error("Not your turn");
 
       if(data.currentEntryId){
-        // Read drawn entry doc (author may be different)
         const entryRef = roomRef.collection('entries').doc(data.currentEntryId);
         const entrySnap = await tx.get(entryRef);
         if(!entrySnap.exists) throw new Error("Current entry missing");
 
-        const entry = entrySnap.data() || {};
-        if(entry.authorUid !== uid){
+        const entryData = entrySnap.data() || {};
+        if(entryData.author !== playerName){
           throw new Error("You can only redraw if you drew your own entry");
         }
       }
     });
   } catch(err){
-    return showFeedback(err.message || "Cannot draw", "#d9534f");
+    return showFeedback(err.message || "Cannot draw now", "#d9534f");
   }
 
-  // Choose an in-play entry
+  // B) Choose an entry (prefer not your own if possible)
   const snap = await roomRef.collection('entries').where('in_play','==',true).get();
-  const entries = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-  if(entries.length === 0) return showFeedback("No entries left", "#d9534f");
+  const entries = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  if(entries.length === 0) return showFeedback("No entries left", "red");
 
-  const nonSelf = entries.filter(e => e.authorUid !== uid);
+  const nonSelf = entries.filter(e => e.author !== playerName);
   const pool = (nonSelf.length > 0) ? nonSelf : entries;
   const picked = pool[Math.floor(Math.random()*pool.length)];
 
-  // Write:
-  // - room.currentEntryId = picked.id
-  // - room.turnStartedAt stays (turn started at advance); drawing doesn't reset timer
-  // - turnViews/{uid} = entry content (private to current player)
+  // C) Commit it (still your turn; overwrite allowed only if previous was yours)
   try{
     await db.runTransaction(async (tx) => {
       const roomSnap = await tx.get(roomRef);
       const data = roomSnap.data() || {};
-      if(data.currentTurnUid !== uid) throw new Error("Not your turn");
+      const players = data.players || {};
+      const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(players);
+      const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
+      const turnPlayer = order[idx];
 
-      // If already drawn, only overwrite if current drawn is my own
+      if(turnPlayer !== playerName) throw new Error("Not your turn");
+
       if(data.currentEntryId){
-        const currentRef = roomRef.collection('entries').doc(data.currentEntryId);
-        const currentSnap = await tx.get(currentRef);
-        if(!currentSnap.exists) throw new Error("Current entry missing");
-        const cur = currentSnap.data() || {};
-        if(cur.authorUid !== uid) throw new Error("You can only redraw if you drew your own entry");
+        const entryRef = roomRef.collection('entries').doc(data.currentEntryId);
+        const entrySnap = await tx.get(entryRef);
+        if(!entrySnap.exists) throw new Error("Current entry missing");
+        const entryData = entrySnap.data() || {};
+        if(entryData.author !== playerName){
+          throw new Error("You can only redraw if you drew your own entry");
+        }
       }
 
-      // Set currentEntryId
       tx.set(roomRef, { currentEntryId: picked.id }, { merge:true });
-
-      // Create/overwrite my private view doc
-      const viewRef = roomRef.collection('turnViews').doc(uid);
-      const viewPayload = {
-        entryId: picked.id,
-        style: picked.style,
-        // include only what is needed to render
-        text: picked.text || null,
-        font: picked.font || null,
-        image: picked.image || null,
-        authorUid: picked.authorUid,
-        authorName: picked.authorName,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      };
-      tx.set(viewRef, viewPayload, { merge:true });
     });
 
-    if(picked.authorUid === uid){
+    if(picked.author === playerName){
       showFeedback("You drew your own — tap Draw again to redraw ✅", "#f0ad4e");
     }
   } catch(err){
@@ -842,72 +632,76 @@ async function drawEntry(){
 
 /* -----------------------------
    Submit Guess
-   - Only current turn player can guess
-   - One guess then advance turn + reset timer
-   - If correct: score++ and mark entry guessed/in_play false
+   ✅ ONE guess, then turn advances automatically.
+   ✅ Only the current turn player can guess.
 ------------------------------ */
-async function submitGuess(){
-  const guessedUid = document.getElementById('guess').value;
-  if(!guessedUid) return;
+async function submitGuess() {
+  const guess = document.getElementById('guess').value;
+  if(!guess) return;
 
   const roomSnap = await roomRef.get();
   const roomData = roomSnap.data() || {};
-  if(roomData.currentTurnUid !== uid) return showFeedback("Not your turn", "#d9534f");
-  if(!roomData.currentEntryId) return showFeedback("Draw an entry first", "#d9534f");
+  if(!roomData.currentEntryId) return showFeedback('Draw an entry first','#d9534f');
 
-  // Read my private turn view doc (this is what ONLY I can read)
-  const myViewDoc = await roomRef.collection('turnViews').doc(uid).get();
-  if(!myViewDoc.exists) return showFeedback("No entry to guess", "#d9534f");
+  const order = Array.isArray(roomData.turnOrder) ? roomData.turnOrder : sortedPlayerNames(roomData.players || {});
+  const idx = (typeof roomData.turnIndex === 'number') ? roomData.turnIndex : 0;
+  const turnPlayer = order[idx];
+  if(turnPlayer !== playerName) return showFeedback("Not your turn", "#d9534f");
 
-  const view = myViewDoc.data() || {};
-  const authorUid = view.authorUid;
-  const wasCorrect = (guessedUid === authorUid);
+  const entryDoc = await roomRef.collection('entries').doc(roomData.currentEntryId).get();
+  if(!entryDoc.exists) return showFeedback('Entry missing','#d9534f');
+
+  currentEntry = { id: entryDoc.id, ...entryDoc.data() };
+  const wasCorrect = (guess === currentEntry.author);
 
   try{
     await db.runTransaction(async (tx) => {
       const snap = await tx.get(roomRef);
       const data = snap.data() || {};
       const players = data.players || {};
-      const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerUids(players);
-      if(order.length === 0) return;
+      const order2 = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(players);
+      const idx2 = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
+      const turnPlayer2 = order2[idx2];
 
-      if(data.currentTurnUid !== uid) throw new Error("Not your turn");
+      if(turnPlayer2 !== playerName) throw new Error("Not your turn");
       if(!data.currentEntryId) throw new Error("No entry drawn");
 
-      // If correct: update score + entry state
-      if(wasCorrect){
-        const myScore = players?.[uid]?.score || 0;
-        tx.set(roomRef, { players: { [uid]: { score: myScore + 1 } } }, { merge:true });
+      const myScore = players[playerName]?.score || 0;
 
-        const entryRef = roomRef.collection('entries').doc(data.currentEntryId);
-        tx.set(entryRef, { guessed_correctly: true, in_play: false }, { merge:true });
+      if(wasCorrect){
+        tx.update(roomRef, { [`players.${playerName}.score`]: myScore + 1 });
+        tx.update(roomRef.collection('entries').doc(data.currentEntryId), { guessed_correctly:true, in_play:false });
       }
 
-      // Advance turn ALWAYS (one guess)
-      const idx = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
-      const next = (idx + 1) % order.length;
-      const nextUid = order[next] || order[0] || null;
-
-      tx.set(roomRef, {
-        turnIndex: next,
-        currentTurnUid: nextUid,
-        currentEntryId: null,
-        turnStartedAt: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge:true });
-
-      // Clear my private view so I can't keep seeing it next turn
-      const viewRef = roomRef.collection('turnViews').doc(uid);
-      tx.delete(viewRef);
+      const next = (idx2 + 1) % (order2.length || 1);
+      tx.set(roomRef, { turnIndex: next, currentEntryId: null }, { merge:true });
     });
   } catch(err){
-    return showFeedback(err.message || "Guess failed", "#d9534f");
+    return showFeedback(err.message || 'Guess failed', '#d9534f');
   }
 
-  showFeedback(wasCorrect ? "✅ Correct!" : "❌ Wrong!", wasCorrect ? "#28a745" : "#d9534f");
-  clearEntryUI();
+  showFeedback(wasCorrect ? '✅ Correct!' : '❌ Wrong!', wasCorrect ? '#28a745' : '#d9534f');
 
+  // Winner check
+  const allEntries = await roomRef.collection('entries').get();
+  const remaining = allEntries.docs.filter(doc => !doc.data().guessed_correctly);
+  if(remaining.length === 0){
+    const finalPlayers = (await roomRef.get()).data().players || {};
+    let maxScore = -1, winners = [];
+    for(const p in finalPlayers){
+      const s = finalPlayers[p].score || 0;
+      if(s > maxScore){ maxScore = s; winners = [p]; }
+      else if(s === maxScore) winners.push(p);
+    }
+    document.getElementById('winnerCard').style.display='block';
+    document.getElementById('winnerCard').textContent =
+      `🎉 Winner: ${winners.join(', ')} with ${maxScore} points! 🎉`;
+    document.getElementById('playCard').style.display='none';
+  }
+
+  currentEntry = null;
+  document.getElementById('entry').innerHTML = '';
   await updateRemaining();
-  await maybeShowWinner();
 }
 
 /* -----------------------------
@@ -920,88 +714,11 @@ async function updateRemaining(){
   document.getElementById('remaining').innerText = remaining;
   return remaining;
 }
-
-/* -----------------------------
-   Winner check
------------------------------- */
-async function maybeShowWinner(){
-  const allEntries = await roomRef.collection('entries').get();
-  const remaining = allEntries.docs.filter(d => !d.data().guessed_correctly);
-  if(remaining.length !== 0) return;
-
-  const finalPlayers = (await roomRef.get()).data().players || {};
-  let maxScore = -1, winners = [];
-  for(const puid in finalPlayers){
-    const s = finalPlayers[puid]?.score || 0;
-    if(s > maxScore){ maxScore = s; winners = [finalPlayers[puid].name || "Unknown"]; }
-    else if(s === maxScore) winners.push(finalPlayers[puid].name || "Unknown");
-  }
-
-  document.getElementById('winnerCard').style.display='block';
-  document.getElementById('winnerCard').textContent =
-    `🎉 Winner: ${winners.join(", ")} with ${maxScore} points! 🎉`;
-  document.getElementById('playCard').style.display='none';
-}
-
-/* -----------------------------
-   Listen updates:
-   - updates players UI + turn UI
-   - Only turn player subscribes to turnViews/{uid} (private doc)
-   - others see waiting + rotating cry verbs
-   - auto-skip after 120s
------------------------------- */
-function listenUpdates(){
-  if(roomUnsub) roomUnsub();
-  roomUnsub = roomRef.onSnapshot(async (snap) => {
-    const data = snap.data() || {};
-    updatePlayersList(data.players || {});
-    await updateRemaining();
-
-    // auto-skip check (any client can attempt)
-    maybeAutoSkip(data);
-
-    const currentTurnUid = data.currentTurnUid || null;
-    const currentTurnName = nameForUid(data.players, currentTurnUid);
-
-    document.getElementById('turnPlayer').textContent = currentTurnName;
-    document.getElementById('waitingFor').textContent = currentTurnName;
-
-    const isMyTurn = (currentTurnUid === uid);
-
-    // controls
-    document.getElementById('drawBtn').disabled = !isMyTurn;
-    document.getElementById('guessBtn').disabled = !isMyTurn;
-    document.getElementById('guess').disabled = !isMyTurn;
-
-    if(!isMyTurn){
-      document.getElementById('waitingMsg').style.display='block';
-      startWaitingVerbRotation();
-
-      // 🔒 Non-turn players never load the entry (and can't read the private doc anyway)
-      clearEntryUI();
-
-      // Ensure we are not subscribed to private view doc
-      if(turnViewUnsub){ turnViewUnsub(); turnViewUnsub = null; }
-      return;
-    } else {
-      document.getElementById('waitingMsg').style.display='none';
-      stopWaitingVerbRotation();
-    }
-
-    // Turn player: subscribe to my private view doc
-    if(!turnViewUnsub){
-      turnViewUnsub = roomRef.collection('turnViews').doc(uid).onSnapshot((viewSnap) => {
-        if(!viewSnap.exists){
-          clearEntryUI();
-          return;
-        }
-        const view = viewSnap.data() || {};
-        currentEntry = view;
-        renderCurrentEntry(view);
-      });
-    }
-  });
-}
 </script>
 </body>
 </html>
+
+
+
+
+

@@ -511,6 +511,9 @@ function listenUpdates() {
         `🎉 Winner: ${winners.join(', ')} with ${score} points! 🎉`;
 
       document.getElementById('playCard').style.display = 'none';
+      // ✅ Make sure the game UI comes back after a reset
+  document.getElementById('playCard').style.display = 'block';
+
       document.getElementById('waitingMsg').style.display = 'none';
       stopWaitingVerbRotation();
       document.getElementById('entry').innerHTML = '';
@@ -787,5 +790,6 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+
 
 

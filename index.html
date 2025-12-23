@@ -151,8 +151,16 @@ canvas{
 <!-- Room Info -->
 <div class="card" id="roomInfoCard" style="display:none;">
   <h3>Room Code: <span id="displayRoomCode"></span></h3>
+
   <button onclick="copyRoomCode()">Copy Room Code</button>
+
+  <!-- ✅ Reset Room Button -->
+  <button onclick="resetRoom()"
+          style="margin-top:10px; background:#6c757d;">
+    Reset Room
+  </button>
 </div>
+
 
 <!-- Players List -->
 <div class="card" id="gameCard" style="display:none;">
@@ -783,5 +791,6 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+
 
 

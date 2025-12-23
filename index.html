@@ -248,7 +248,7 @@ function setRandomWaitingVerb(){
 function startWaitingVerbRotation(){
   stopWaitingVerbRotation();
   setRandomWaitingVerb();
-  waitingInterval = setInterval(setRandomWaitingVerb, 1500);
+  waitingInterval = setInterval(setRandomWaitingVerb, 3000);
 }
 function stopWaitingVerbRotation(){
   if(waitingInterval) clearInterval(waitingInterval);
@@ -717,5 +717,6 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+
 
 

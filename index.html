@@ -210,6 +210,34 @@ canvas{
 
 <!-- Winner Display -->
 <div id="winnerCard"></div>
+  <!-- 🎄 Xmas Music UI -->
+<div id="musicUI" style="
+  position:fixed; bottom:20px; right:20px;
+  background:rgba(20,20,20,0.85);
+  padding:10px 12px; border-radius:999px;
+  display:flex; align-items:center; gap:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.4);
+  z-index:9999;
+">
+  <button id="musicToggle" style="width:auto; padding:8px 12px; border-radius:999px;">
+    🎵 Music Off
+  </button>
+
+  <label style="display:flex; align-items:center; gap:8px; font-size:14px; color:#fff;">
+    🔊
+    <input id="musicVolume" type="range" min="0" max="1" step="0.01" value="0.35"
+           style="width:110px;">
+  </label>
+</div>
+
+<!-- Background music -->
+<audio id="xmasMusic" loop preload="none"></audio>
+
+<!-- Victory jingle -->
+<audio id="victoryJingle" preload="auto">
+  <source src="https://cdn.pixabay.com/audio/2021/08/04/audio_12b0c1e6ff.mp3" type="audio/mpeg">
+</audio>
+
 
 <script>
 /* -----------------------------
@@ -239,6 +267,121 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
+  /* -----------------------------
+   🎶 Xmas Music System (All features)
+------------------------------ */
+
+// Royalty-free Xmas-ish tracks (Pixabay CDN). You can swap these URLs anytime.
+const XMAS_TRACKS = [
+  "https://cdn.pixabay.com/audio/2022/12/06/audio_5c1c4c6f7f.mp3",
+  "https://cdn.pixabay.com/audio/2022/12/10/audio_2d390e57f2.mp3",
+  "https://cdn.pixabay.com/audio/2022/12/20/audio_8f05d5d3b0.mp3"
+];
+
+const music = document.getElementById("xmasMusic");
+const jingle = document.getElementById("victoryJingle");
+const musicBtn = document.getElementById("musicToggle");
+const volumeSlider = document.getElementById("musicVolume");
+
+let musicEnabled = false;     // user toggle
+let wasPlayingBeforeBlur = false;
+let gameHasStarted = false;
+let currentTrackUrl = null;
+
+function pickRandomTrackUrl() {
+  return XMAS_TRACKS[Math.floor(Math.random() * XMAS_TRACKS.length)];
+}
+
+function setMusicTrack(url) {
+  if (!url || url === currentTrackUrl) return;
+  currentTrackUrl = url;
+  music.src = url;
+}
+
+function setVolume(v) {
+  const vol = Math.max(0, Math.min(1, Number(v)));
+  music.volume = vol;
+  volumeSlider.value = String(vol);
+}
+
+function updateMusicButton() {
+  musicBtn.textContent = musicEnabled ? "🔇 Music On" : "🎵 Music Off";
+}
+
+async function tryPlayMusic() {
+  // Only play when: user enabled + game started
+  if (!musicEnabled || !gameHasStarted) return;
+
+  // Ensure a track is selected
+  if (!currentTrackUrl) setMusicTrack(pickRandomTrackUrl());
+
+  try {
+    await music.play(); // will succeed because it’s triggered by a click / allowed state
+  } catch {
+    // If browser blocks it, user can tap the button again
+  }
+}
+
+function stopMusic() {
+  music.pause();
+}
+
+function toggleMusic() {
+  musicEnabled = !musicEnabled;
+  updateMusicButton();
+
+  if (musicEnabled) {
+    // Choose a random track each time they turn it on
+    setMusicTrack(pickRandomTrackUrl());
+    tryPlayMusic();
+  } else {
+    stopMusic();
+  }
+}
+
+// Victory jingle (does not depend on music enabled)
+function playVictoryJingle() {
+  try {
+    jingle.currentTime = 0;
+    jingle.volume = Math.min(1, music.volume + 0.15); // a bit louder than bg
+    jingle.play().catch(() => {});
+  } catch {}
+}
+
+// Auto-pause/mute when tab not active, resume if it was playing
+function handleVisibilityChange() {
+  const hidden = document.hidden;
+
+  if (hidden) {
+    wasPlayingBeforeBlur = !music.paused;
+    stopMusic();
+  } else {
+    if (wasPlayingBeforeBlur) tryPlayMusic();
+    wasPlayingBeforeBlur = false;
+  }
+}
+
+// Also catch alt-tab / window blur
+window.addEventListener("blur", () => {
+  wasPlayingBeforeBlur = !music.paused;
+  stopMusic();
+});
+window.addEventListener("focus", () => {
+  if (wasPlayingBeforeBlur) tryPlayMusic();
+  wasPlayingBeforeBlur = false;
+});
+
+document.addEventListener("visibilitychange", handleVisibilityChange);
+
+// Hook up UI
+musicBtn.addEventListener("click", toggleMusic);
+volumeSlider.addEventListener("input", (e) => setVolume(e.target.value));
+
+// Default volume
+setVolume(volumeSlider.value);
+updateMusicButton();
+
 
 /* -----------------------------
    Cry synonyms (rotating while waiting)
@@ -490,6 +633,9 @@ async function joinRoom() {
   document.getElementById('turnCard').style.display = 'block';
   document.getElementById('playCard').style.display = 'block';
   document.getElementById('remainingCard').style.display = 'block';
+  gameHasStarted = true;
+tryPlayMusic();
+
 
   await ensureTurnStateExists();
   listenUpdates();
@@ -518,6 +664,9 @@ function listenUpdates() {
 
       document.getElementById('playCard').style.display = 'none';
       // ✅ Make sure the game UI comes back after a reset
+      stopMusic();
+playVictoryJingle();
+
   document.getElementById('playCard').style.display = 'block';
 
       document.getElementById('waitingMsg').style.display = 'none';
@@ -796,6 +945,7 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+
 
 
 

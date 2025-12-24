@@ -637,6 +637,12 @@ async function joinRoom() {
   document.getElementById('playCard').style.display = 'block';
   document.getElementById('remainingCard').style.display = 'block';
   gameHasStarted = true;
+  // ✅ Auto-enable music on join
+if (!musicEnabled) {
+  musicEnabled = true;
+  updateMusicButton();
+  setMusicTrack(pickRandomTrackUrl());
+}
 tryPlayMusic();
 
 
@@ -670,7 +676,6 @@ function listenUpdates() {
       stopMusic();
 playVictoryJingle();
 
-  document.getElementById('playCard').style.display = 'block';
 
       document.getElementById('waitingMsg').style.display = 'none';
       stopWaitingVerbRotation();
@@ -948,6 +953,7 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
+
 
 
 

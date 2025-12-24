@@ -9,124 +9,134 @@
 <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Indie+Flower&family=Caveat&family=Lobster&family=Roboto&display=swap" rel="stylesheet">
 
 <style>
-/* --- Dark Cards on Mostly-White Xmas Background --- */
-body {
+body{
   font-family: Roboto, sans-serif;
-  background-color: #f5f5f5;  /* fallback if image fails */
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-attachment: fixed;
-  background-size: cover;
-  color: #fff;
-  padding: 20px;
-  margin: 0;
+  background-color:#f5f5f5;
+  background-repeat:no-repeat;
+  background-position:center center;
+  background-attachment:fixed;
+  background-size:cover;
+  color:#fff;
+  padding:20px;
+  margin:0;
 }
 
-h1 {
-  margin-bottom: 10px;
-  color: #000;
-  text-shadow: 1px 1px 2px #fff;
-  text-align: center;
+h1{
+  margin-bottom:10px;
+  color:#000;
+  text-shadow:1px 1px 2px #fff;
+  text-align:center;
 }
 
-.card {
+.card{
   background: rgba(20,20,20,0.88);
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  margin-bottom: 15px;
-  color: #fff;
+  padding:15px;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.5);
+  margin-bottom:15px;
+  color:#fff;
 }
 
-input, select, button {
-  padding: 8px;
-  margin: 5px 0;
-  border-radius: 5px;
-  border: none;
-  font-size: 16px;
+input, select, button{
+  padding:8px;
+  margin:5px 0;
+  border-radius:5px;
+  border:none;
+  font-size:16px;
 }
 
-input, select {
-  background: #444;
-  color: #fff;
-  width: 100%;
-  box-sizing: border-box;
+input, select{
+  background:#444;
+  color:#fff;
+  width:100%;
+  box-sizing:border-box;
 }
 
-button {
-  cursor: pointer;
-  background: #d9534f;
-  color: #fff;
-  border: none;
-  width: 100%;
+button{
+  cursor:pointer;
+  background:#d9534f;
+  color:#fff;
+  border:none;
+  width:100%;
 }
 
-button:hover { background: #c9302c; }
-button:disabled { opacity: 0.55; cursor: not-allowed; }
+button:hover{ background:#c9302c; }
+button:disabled{ opacity:0.55; cursor:not-allowed; }
 
-/* ✅ FIX: canvas is not huge anymore */
 canvas{
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
-  touch-action: none;
-
-  display: block;
-  width: 320px;
-  max-width: 100%;
-  height: 160px;
-  margin: 10px auto;
+  border:1px solid #ccc;
+  border-radius:6px;
+  background:#fff;
+  touch-action:none;
+  display:block;
+  width:320px;
+  max-width:100%;
+  height:160px;
+  margin:10px auto;
 }
 
-.entry-card {
-  font-size: 26px;
-  text-align: center;
-  margin: 15px 0;
-  color: #ffd700;
+.entry-card{
+  font-size:26px;
+  text-align:center;
+  margin:15px 0;
+  color:#ffd700;
 }
 
-.done { color: #28a745; font-weight: bold; }
+.done{ color:#28a745; font-weight:bold; }
 
-#winnerCard {
-  display: none;
+#winnerCard{
+  display:none;
   background: rgba(255,215,0,0.9);
-  color: #000;
-  font-size: 24px;
-  font-weight: bold;
-  text-align: center;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+  color:#000;
+  font-size:24px;
+  font-weight:bold;
+  text-align:center;
+  padding:20px;
+  border-radius:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.7);
 }
 
-/* Feedback box */
-#feedbackBox {
-  position: fixed;
-  top: 20px;
-  left: 50%;
+#feedbackBox{
+  position:fixed;
+  top:20px;
+  left:50%;
   transform: translateX(-50%) translateY(-20px);
-  z-index: 9999;
-  display: none;
-  text-align: center;
-  font-size: 20px;
-  font-weight: bold;
-  padding: 10px 20px;
-  border-radius: 8px;
-  background-color: #28a745;
-  color: #fff;
-  opacity: 0;
+  z-index:9999;
+  display:none;
+  text-align:center;
+  font-size:20px;
+  font-weight:bold;
+  padding:10px 20px;
+  border-radius:8px;
+  background-color:#28a745;
+  color:#fff;
+  opacity:0;
   transition: all 0.4s ease;
 }
-#feedbackBox.show {
-  opacity: 1;
+#feedbackBox.show{
+  opacity:1;
   transform: translateX(-50%) translateY(0);
 }
 
-/* Turn banner */
 #turnBanner{
   text-align:center;
   font-weight:bold;
   font-size:18px;
+}
+
+/* Music UI */
+#musicUI{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:rgba(20,20,20,0.85);
+  padding:10px 12px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.4);
+  z-index:9999;
 }
 </style>
 </head>
@@ -147,16 +157,9 @@ canvas{
 <!-- Room Info -->
 <div class="card" id="roomInfoCard" style="display:none;">
   <h3>Room Code: <span id="displayRoomCode"></span></h3>
-
   <button onclick="copyRoomCode()">Copy Room Code</button>
-
-  <!-- ✅ Reset Room Button -->
-  <button onclick="resetRoom()"
-          style="margin-top:10px; background:#6c757d;">
-    Reset Room
-  </button>
+  <button onclick="resetRoom()" style="margin-top:10px; background:#6c757d;">Reset Room</button>
 </div>
-
 
 <!-- Players List -->
 <div class="card" id="gameCard" style="display:none;">
@@ -189,10 +192,8 @@ canvas{
 <!-- Game Play -->
 <div class="card" id="playCard" style="display:none;">
   <h3>Game</h3>
-
   <button id="drawBtn" onclick="drawEntry()">Draw Random Entry</button>
 
-  <!-- ✅ Waiting message w/ rotating cry synonym -->
   <div id="waitingMsg" style="text-align:center; font-size:16px; opacity:0.9; margin:10px 0; display:none;">
     Waiting for <b><span id="waitingFor">—</span></b> to <b><span id="waitingVerb">sob</span></b>...
   </div>
@@ -210,23 +211,13 @@ canvas{
 
 <!-- Winner Display -->
 <div id="winnerCard"></div>
-  <!-- 🎄 Xmas Music UI -->
-<div id="musicUI" style="
-  position:fixed; bottom:20px; right:20px;
-  background:rgba(20,20,20,0.85);
-  padding:10px 12px; border-radius:999px;
-  display:flex; align-items:center; gap:10px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.4);
-  z-index:9999;
-">
-  <button id="musicToggle" style="width:auto; padding:8px 12px; border-radius:999px;">
-    🎵 Music Off
-  </button>
 
+<!-- 🎄 Xmas Music UI -->
+<div id="musicUI">
+  <button id="musicToggle" style="width:auto; padding:8px 12px; border-radius:999px;">🎵 Music Off</button>
   <label style="display:flex; align-items:center; gap:8px; font-size:14px; color:#fff;">
     🔊
-    <input id="musicVolume" type="range" min="0" max="1" step="0.01" value="0.35"
-           style="width:110px;">
+    <input id="musicVolume" type="range" min="0" max="1" step="0.01" value="0.35" style="width:110px;">
   </label>
 </div>
 
@@ -235,12 +226,10 @@ canvas{
   <source src="https://cdn.pixabay.com/audio/2022/12/06/audio_5c1c4c6f7f.mp3" type="audio/mpeg">
 </audio>
 
-
 <!-- Victory jingle -->
 <audio id="victoryJingle" preload="auto">
   <source src="https://cdn.pixabay.com/audio/2021/08/04/audio_12b0c1e6ff.mp3" type="audio/mpeg">
 </audio>
-
 
 <script>
 /* -----------------------------
@@ -271,11 +260,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-  /* -----------------------------
-   🎶 Xmas Music System (All features)
+/* -----------------------------
+   🎶 Xmas Music System (fixed + correct)
 ------------------------------ */
-
-// Royalty-free Xmas-ish tracks (Pixabay CDN). You can swap these URLs anytime.
 const XMAS_TRACKS = [
   "https://cdn.pixabay.com/audio/2022/12/06/audio_5c1c4c6f7f.mp3",
   "https://cdn.pixabay.com/audio/2022/12/10/audio_2d390e57f2.mp3",
@@ -287,55 +274,44 @@ const jingle = document.getElementById("victoryJingle");
 const musicBtn = document.getElementById("musicToggle");
 const volumeSlider = document.getElementById("musicVolume");
 
-let musicEnabled = false;     // user toggle
+let musicEnabled = false;
 let wasPlayingBeforeBlur = false;
 let gameHasStarted = false;
 let currentTrackUrl = null;
 
-function pickRandomTrackUrl() {
+function pickRandomTrackUrl(){
   return XMAS_TRACKS[Math.floor(Math.random() * XMAS_TRACKS.length)];
 }
 
-function setMusicTrack(url) {
-  if (!url || url === currentTrackUrl) return;
+function setMusicTrack(url){
+  if(!url) return;
+  if(url === currentTrackUrl) return;
   currentTrackUrl = url;
   music.src = url;
 }
 
-function setVolume(v) {
+function setVolume(v){
   const vol = Math.max(0, Math.min(1, Number(v)));
   music.volume = vol;
   volumeSlider.value = String(vol);
 }
 
-function updateMusicButton() {
+function updateMusicButton(){
   musicBtn.textContent = musicEnabled ? "🔇 Music On" : "🎵 Music Off";
 }
 
-async function tryPlayMusic() {
-  // Only play when: user enabled + game started
-  if (!musicEnabled || !gameHasStarted) return;
-
-  // Ensure a track is selected
-  if (!currentTrackUrl) setMusicTrack(pickRandomTrackUrl());
-
-  try {
-    await music.play(); // will succeed because it’s triggered by a click / allowed state
-  } catch {
-    // If browser blocks it, user can tap the button again
-  }
+async function tryPlayMusic(){
+  if(!musicEnabled || !gameHasStarted) return;
+  if(!currentTrackUrl) setMusicTrack(pickRandomTrackUrl());
+  try { await music.play(); } catch(e) { /* blocked until gesture */ }
 }
 
-function stopMusic() {
-  music.pause();
-}
+function stopMusic(){ music.pause(); }
 
-function toggleMusic() {
+function toggleMusic(){
   musicEnabled = !musicEnabled;
   updateMusicButton();
-
-  if (musicEnabled) {
-    // Choose a random track each time they turn it on
+  if(musicEnabled){
     setMusicTrack(pickRandomTrackUrl());
     tryPlayMusic();
   } else {
@@ -343,54 +319,46 @@ function toggleMusic() {
   }
 }
 
-// Victory jingle (does not depend on music enabled)
-function playVictoryJingle() {
-  try {
+function playVictoryJingle(){
+  try{
     jingle.currentTime = 0;
-    jingle.volume = Math.min(1, music.volume + 0.15); // a bit louder than bg
-    jingle.play().catch(() => {});
-  } catch {}
+    jingle.volume = Math.min(1, music.volume + 0.15);
+    jingle.play().catch(()=>{});
+  }catch{}
 }
 
-// Auto-pause/mute when tab not active, resume if it was playing
-function handleVisibilityChange() {
-  const hidden = document.hidden;
-
-  if (hidden) {
+function handleVisibilityChange(){
+  if(document.hidden){
     wasPlayingBeforeBlur = !music.paused;
     stopMusic();
-  } else {
-    if (wasPlayingBeforeBlur) tryPlayMusic();
+  }else{
+    if(wasPlayingBeforeBlur) tryPlayMusic();
     wasPlayingBeforeBlur = false;
   }
 }
 
-// Also catch alt-tab / window blur
 window.addEventListener("blur", () => {
   wasPlayingBeforeBlur = !music.paused;
   stopMusic();
 });
 window.addEventListener("focus", () => {
-  if (wasPlayingBeforeBlur) tryPlayMusic();
+  if(wasPlayingBeforeBlur) tryPlayMusic();
   wasPlayingBeforeBlur = false;
 });
-
 document.addEventListener("visibilitychange", handleVisibilityChange);
 
-// Hook up UI
 musicBtn.addEventListener("click", toggleMusic);
 volumeSlider.addEventListener("input", (e) => setVolume(e.target.value));
 
-// Default volume
 setVolume(volumeSlider.value);
 updateMusicButton();
-
 
 /* -----------------------------
    Cry synonyms (rotating while waiting)
 ------------------------------ */
 const crySynonyms = [
-  "cry","sob","weep","wail","bawl","snivel","whimper","blubber","lament","lose thier shit","rage-quit","ugly-cry","shit a brick","panic","emotionally malfunction"
+  "cry","sob","weep","wail","bawl","snivel","whimper","blubber","lament",
+  "lose their shit","rage-quit","ugly-cry","shit a brick","panic","emotionally malfunction"
 ];
 let waitingInterval = null;
 
@@ -409,49 +377,6 @@ function stopWaitingVerbRotation(){
   waitingInterval = null;
 }
 
-  async function resetRoom(){
-  if(!confirm("Reset the room? This will delete all entries and scores.")) return;
-
-  // 1) Delete all entries
-  const entriesSnap = await roomRef.collection('entries').get();
-  const batch = db.batch();
-  entriesSnap.forEach(doc => batch.delete(doc.ref));
-  await batch.commit();
-
-  // 2) Reset players
-  const roomSnap = await roomRef.get();
-  const data = roomSnap.data() || {};
-  const players = data.players || {};
-
-  const resetPlayers = {};
-  for(const p in players){
-    resetPlayers[p] = { count: 0, score: 0 };
-  }
-
-  // 3) Reset room state
-  await roomRef.set({
-    players: resetPlayers,
-    turnIndex: 0,
-    currentEntryId: null,
-    gameOver: false,
-    winnerNames: [],
-    winnerScore: 0
-  }, { merge: true });
-
-  // 4) Reset UI locally
-  document.getElementById('winnerCard').style.display = 'none';
-  document.getElementById('entry').innerHTML = '';
-  stopWaitingVerbRotation();
-
-  showFeedback("Room reset 🎄", "#28a745");
-    document.getElementById('playCard').style.display = 'block';
-document.getElementById('waitingMsg').style.display = 'none';
-document.getElementById('entry').innerHTML = '';
-currentEntry = null;
-stopWaitingVerbRotation();
-
-}
-
 /* -----------------------------
    State
 ------------------------------ */
@@ -462,13 +387,54 @@ const fonts = ['Pacifico','Indie Flower','Caveat','Lobster','Roboto'];
 let currentEntry = null;
 
 /* -----------------------------
+   Reset Room
+------------------------------ */
+async function resetRoom(){
+  if(!roomRef) return alert("Join a room first");
+  if(!confirm("Reset the room? This will delete all entries and scores.")) return;
+
+  // Delete all entries
+  const entriesSnap = await roomRef.collection('entries').get();
+  const batch = db.batch();
+  entriesSnap.forEach(doc => batch.delete(doc.ref));
+  await batch.commit();
+
+  // Reset players
+  const roomSnap = await roomRef.get();
+  const data = roomSnap.data() || {};
+  const players = data.players || {};
+  const resetPlayers = {};
+  for(const p in players){
+    resetPlayers[p] = { count: 0, score: 0 };
+  }
+
+  // Reset room state
+  await roomRef.set({
+    players: resetPlayers,
+    turnIndex: 0,
+    currentEntryId: null,
+    gameOver: false,
+    winnerNames: [],
+    winnerScore: 0
+  }, { merge: true });
+
+  // Local UI reset (snapshot will also sync everyone)
+  document.getElementById('winnerCard').style.display = 'none';
+  document.getElementById('entry').innerHTML = '';
+  document.getElementById('waitingMsg').style.display = 'none';
+  currentEntry = null;
+  stopWaitingVerbRotation();
+
+  showFeedback("Room reset 🎄", "#28a745");
+}
+
+/* -----------------------------
    Canvas setup (fixed size + crisp drawing)
 ------------------------------ */
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
 function resizeCanvasToFixed(){
-  // Match CSS: 320x160 (but keep crisp on high DPI)
   const cssW = 320;
   const cssH = 160;
   const dpr = window.devicePixelRatio || 1;
@@ -480,28 +446,23 @@ function resizeCanvasToFixed(){
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-  // White background
   ctx.fillStyle = "white";
   ctx.fillRect(0, 0, cssW, cssH);
-
-  // Default stroke style
   ctx.strokeStyle = "#000";
 }
 resizeCanvasToFixed();
 
 let drawing = false;
 
-// Desktop drawing
 canvas.addEventListener('mousedown', () => drawing = true);
 canvas.addEventListener('mouseup', () => { drawing = false; ctx.beginPath(); });
 canvas.addEventListener('mousemove', draw);
 
-// Mobile drawing
 canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; drawTouch(e); });
 canvas.addEventListener('touchmove', e => { e.preventDefault(); drawTouch(e); });
 canvas.addEventListener('touchend', e => { e.preventDefault(); drawing = false; ctx.beginPath(); });
 
-function draw(e) {
+function draw(e){
   if(!drawing) return;
   const rect = canvas.getBoundingClientRect();
   const x = e.clientX - rect.left;
@@ -514,7 +475,7 @@ function draw(e) {
   ctx.beginPath();
   ctx.moveTo(x, y);
 }
-function drawTouch(e) {
+function drawTouch(e){
   if(!drawing) return;
   const touch = e.touches[0];
   const rect = canvas.getBoundingClientRect();
@@ -528,8 +489,7 @@ function drawTouch(e) {
   ctx.beginPath();
   ctx.moveTo(x, y);
 }
-function clearCanvas() {
-  // Clear to white in CSS coordinates (320x160)
+function clearCanvas(){
   ctx.clearRect(0, 0, 320, 160);
   ctx.fillStyle = "white";
   ctx.fillRect(0, 0, 320, 160);
@@ -553,7 +513,7 @@ function showFeedback(message,color){
   setTimeout(()=>{ fb.classList.remove('show'); }, 2000);
 }
 
-function copyRoomCode() {
+function copyRoomCode(){
   navigator.clipboard.writeText(roomId)
     .then(() => alert('Room code copied!'))
     .catch(()=>alert('Failed to copy.'));
@@ -573,7 +533,7 @@ function renderCurrentEntry(entry){
     img.src = entry.image;
     img.width = 300;
     div.appendChild(img);
-  } else {
+  }else{
     const p = document.createElement('div');
     p.className = 'entry-card';
     p.style.fontFamily = entry.font;
@@ -617,14 +577,14 @@ async function ensureTurnStateExists(){
 
 /* -----------------------------
    Join Room
+   ✅ auto-start music on join
 ------------------------------ */
-async function joinRoom() {
+async function joinRoom(){
   playerName = document.getElementById('playerName').value.trim();
   roomId = document.getElementById('roomId').value.trim();
   if(!playerName || !roomId) return alert('Enter name and room code');
 
   roomRef = db.collection('games').doc(roomId);
-
   await roomRef.set({ players: { [playerName]: {count:0, score:0} } }, { merge:true });
 
   document.getElementById('roomCard').style.display = 'none';
@@ -636,15 +596,16 @@ async function joinRoom() {
   document.getElementById('turnCard').style.display = 'block';
   document.getElementById('playCard').style.display = 'block';
   document.getElementById('remainingCard').style.display = 'block';
-  gameHasStarted = true;
-  // ✅ Auto-enable music on join
-if (!musicEnabled) {
-  musicEnabled = true;
-  updateMusicButton();
-  setMusicTrack(pickRandomTrackUrl());
-}
-tryPlayMusic();
 
+  gameHasStarted = true;
+
+  // ✅ Auto-enable music on join (join click counts as gesture)
+  if(!musicEnabled){
+    musicEnabled = true;
+    updateMusicButton();
+    setMusicTrack(pickRandomTrackUrl());
+  }
+  tryPlayMusic();
 
   await ensureTurnStateExists();
   listenUpdates();
@@ -653,29 +614,30 @@ tryPlayMusic();
 /* -----------------------------
    Live Updates
    ✅ Only the turn player can SEE the entry.
-   ✅ Waiting verb rotates (cry synonyms) for non-turn players.
-   ✅ NEW: winner banner shows for EVERYONE (from Firestore)
+   ✅ Winner banner shows for EVERYONE (from Firestore)
 ------------------------------ */
-function listenUpdates() {
+function listenUpdates(){
   roomRef.onSnapshot(async (snapshot) => {
     const data = snapshot.data() || {};
     updatePlayersList(data.players || {});
     await updateRemaining();
 
-    // ✅ NEW: If gameOver is set, show winner for everyone and stop turn UI
-    if (data.gameOver) {
+    // If gameOver, show winner for everyone
+    if(data.gameOver){
       const winners = Array.isArray(data.winnerNames) ? data.winnerNames : [];
       const score = (typeof data.winnerScore === "number") ? data.winnerScore : 0;
 
-      document.getElementById('winnerCard').style.display = 'block';
-      document.getElementById('winnerCard').textContent =
-        `🎉 Winner: ${winners.join(', ')} with ${score} points! 🎉- Everyone Else - Sucks to Suck`;
+      const winnerCard = document.getElementById('winnerCard');
+      winnerCard.style.display = 'block';
+      winnerCard.innerHTML = `
+        🎉 Winner: ${winners.join(', ')} with ${score} points! 🎉
+        <div style="margin-top:8px; font-size:18px;">Everyone else</div>
+      `;
 
       document.getElementById('playCard').style.display = 'none';
-      // ✅ Make sure the game UI comes back after a reset
-      stopMusic();
-playVictoryJingle();
 
+      stopMusic();
+      playVictoryJingle();
 
       document.getElementById('waitingMsg').style.display = 'none';
       stopWaitingVerbRotation();
@@ -683,6 +645,10 @@ playVictoryJingle();
       currentEntry = null;
       return;
     }
+
+    // ✅ bring game UI back after reset / normal play
+    document.getElementById('winnerCard').style.display = 'none';
+    document.getElementById('playCard').style.display = 'block';
 
     const order = Array.isArray(data.turnOrder) ? data.turnOrder : sortedPlayerNames(data.players || {});
     const turnIndex = (typeof data.turnIndex === 'number') ? data.turnIndex : 0;
@@ -702,26 +668,25 @@ playVictoryJingle();
       document.getElementById('waitingMsg').style.display = 'block';
       startWaitingVerbRotation();
 
-      // 🔒 Hide entry for everyone else
       document.getElementById('entry').innerHTML = '';
       currentEntry = null;
-      return; // IMPORTANT: do not fetch/render entry for non-turn players
-    } else {
+      return;
+    }else{
       document.getElementById('waitingMsg').style.display = 'none';
       stopWaitingVerbRotation();
     }
 
-    // Turn player ONLY: fetch + render shared currentEntryId (if any)
+    // Turn player ONLY: fetch + render currentEntryId (if any)
     if(data.currentEntryId){
       const entryDoc = await roomRef.collection('entries').doc(data.currentEntryId).get();
       if(entryDoc.exists){
         currentEntry = { id: entryDoc.id, ...entryDoc.data() };
         renderCurrentEntry(currentEntry);
-      } else {
+      }else{
         currentEntry = null;
         document.getElementById('entry').innerHTML = '';
       }
-    } else {
+    }else{
       currentEntry = null;
       document.getElementById('entry').innerHTML = '';
     }
@@ -754,7 +719,7 @@ function updatePlayersList(players){
 /* -----------------------------
    Add Entry
 ------------------------------ */
-async function addEntry() {
+async function addEntry(){
   const text = document.getElementById('entryText').value.trim();
   const author = document.getElementById('entryAuthor').value;
   const style = document.getElementById('style').value;
@@ -768,8 +733,9 @@ async function addEntry() {
 
   const entry = { author, style, in_play:true, guessed_correctly:false };
 
-  if(style === 'handwriting') entry.image = canvas.toDataURL();
-  else {
+  if(style === 'handwriting'){
+    entry.image = canvas.toDataURL();
+  }else{
     entry.text = text;
     entry.font = fonts[Math.floor(Math.random()*fonts.length)];
   }
@@ -784,8 +750,11 @@ async function addEntry() {
 
 /* -----------------------------
    Draw Entry
+   ✅ Only current turn player can draw.
+   ✅ Redraw allowed only if current entry is YOURS.
+   ✅ Avoids your own entry when others exist.
 ------------------------------ */
-async function drawEntry() {
+async function drawEntry(){
   try{
     await db.runTransaction(async (tx) => {
       const roomSnap = await tx.get(roomRef);
@@ -808,7 +777,7 @@ async function drawEntry() {
         }
       }
     });
-  } catch(err){
+  }catch(err){
     return showFeedback(err.message || "Cannot draw now", "#d9534f");
   }
 
@@ -847,16 +816,17 @@ async function drawEntry() {
     if(picked.author === playerName){
       showFeedback("You drew your own — tap Draw again to redraw ✅", "#f0ad4e");
     }
-  } catch(err){
+  }catch(err){
     return showFeedback(err.message || "Draw failed", "#d9534f");
   }
 }
 
 /* -----------------------------
    Submit Guess
-   ✅ NEW: writes winner to Firestore so EVERYONE sees it
+   ✅ ONE guess then advances turn.
+   ✅ Winner persisted so everyone sees it.
 ------------------------------ */
-async function submitGuess() {
+async function submitGuess(){
   const guess = document.getElementById('guess').value;
   if(!guess) return;
 
@@ -897,13 +867,12 @@ async function submitGuess() {
       const next = (idx2 + 1) % (order2.length || 1);
       tx.set(roomRef, { turnIndex: next, currentEntryId: null }, { merge:true });
     });
-  } catch(err){
+  }catch(err){
     return showFeedback(err.message || 'Guess failed', '#d9534f');
   }
 
   showFeedback(wasCorrect ? '✅ Correct!' : '❌ Wrong!', wasCorrect ? '#28a745' : '#d9534f');
 
-  // ✅ NEW: Winner check that writes gameOver/winnerNames/winnerScore to Firestore
   await maybeSetWinnerForEveryone();
 
   currentEntry = null;
@@ -912,7 +881,7 @@ async function submitGuess() {
 }
 
 /* -----------------------------
-   ✅ NEW: Persist winner so everyone sees it
+   Persist winner so everyone sees it
 ------------------------------ */
 async function maybeSetWinnerForEveryone(){
   const allEntries = await roomRef.collection('entries').get();
@@ -927,7 +896,7 @@ async function maybeSetWinnerForEveryone(){
     if(s > maxScore){
       maxScore = s;
       winners = [p];
-    } else if(s === maxScore){
+    }else if(s === maxScore){
       winners.push(p);
     }
   }
@@ -953,11 +922,3 @@ async function updateRemaining(){
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
